@@ -149,7 +149,7 @@ fi
 if $prompt_for_input ; then
   read -p " > ${prompt_color} Service provider. If your DAC will not use a service provider, enter none. (Service Account):${reset} " dacservice
 fi
-if [ "$dacservice" == "none" || "$dacservice" == "" ]; then
+if [[ "$dacservice" == "none" || "$dacservice" == "" ]]; then
   dacservice=""
 else
   run_cmd "get account $dacservice" &>/dev/null
