@@ -6,39 +6,16 @@ source ./functions.sh
 prompt_color=`tput setaf 6`
 reset=`tput sgr0`
 
-# Set this to false if you don't want the script to prompt you for input and prefer to set configured values below instead.
 prompt_for_input=true
 
-dacname="DAC Factory"
-DAC_PVT="5KhYU7A4LNGmS6zu6Uf5z3AaDtzS7rojHPUZGQC2eMfiMm4PUWp" # all accounts created by this script will use this key
-DAC_PUB="EOS5zQWu4DP6JuTgrp97LKS3vCws6aNS3RGbDUoAGgPqLHU69Boir" # all accounts created by this script will use this key
-EOS_ACCOUNT="dacfactory11" # This is the account creating all the other DAC accounts. It should have at least 100 EOS.
-daccustodian="dacfac11cust"
-dacauthority="dacfac11auth"
-dactoken="dacfac11tokn"
-dacowner="dacfac11ownr"
-dacservice="dacfac11serv"
-dacmultisigs="dacfac11mult"
-dacproposals="dacfac11prop"
-TOKENSYBMOL="DACFAC"
-DACTOKEN_COUNT_CREATE="1000000000"
-DACTOKEN_COUNT_ISSUE="100000000"
-CONSTITUTION_URL="https://github.com/eosdac/constitution/blob/41b17819a3e819f39092f72c29ffd466815868ce/constitution.md"
-lockupasset="35000"
-maxvotes="5"
-numelected="12"
-periodlength="604800"
-authaccount="$dacauthority"
-tokenholder="$dactoken"
-serviceprovider="$dacservice"
-should_pay_via_service_provider=1
-initial_vote_quorum_percent="15"
-vote_quorum_percent="10"
-auth_threshold_high="10"
-auth_threshold_mid="9"
-auth_threshold_low="7"
-lockup_release_time_delay="7776000"
-requested_pay_max="50"
+if [ -f ./dac_conf.sh ]; then
+  echo "Using variables imported from dac_conf.sh:"
+  source ./dac_conf.sh
+  prompt_for_input=false
+fi
+
+# If you ever don't have enough RAM for an account to set a contract, you can get more with this command:
+# ./jungle.sh system buyram dacfactory11 dacfac11cust "10.000 EOS"
 
 echo "========================================================="
 echo "=                                                       ="
@@ -72,27 +49,26 @@ if $prompt_for_input ; then
     KEYS="$(cleos create key --to-console | awk '{ print $3 }')"
     DAC_PVT="$(echo $KEYS | head -n1 | awk '{print $1;}')"
     DAC_PUB="$(echo $KEYS | head -n1 | awk '{print $2;}')"
-    read -p " > ${prompt_color} Are you ready to save your keys securely?:${reset} " response
+    read -p " > ${prompt_color} Are you ready to view a private key on screen and save it securely (Y/N)?:${reset} " response
     if [[ "$response" == "Y" || "$response" == "y" ]]; then
       echo "Private Key: $DAC_PVT"
       read -p " > ${prompt_color} Press any key to clear the screen and continue${reset}" response
       clear
-      read -p " > ${prompt_color} Press verify your private key:${reset} " response
+      echo " > ${prompt_color} Press verify your private key:${reset} "
+      read -s response
       if [[ $response != $DAC_PVT ]]; then
         echo "Private Key does not match!"
         exit
       fi
-      read -p " > ${prompt_color} Press any key to clear the screen and continue${reset}" response
-      clear
+      echo "Use the following key to create an account using the Jungle Testnet https://monitor.jungletestnet.io/#home"
+      echo "Public Key: $DAC_PUB"
       read -p " > ${prompt_color} Press verify your public key:${reset} " response
       if [[ $response != $DAC_PUB ]]; then
         echo "Public Key does not match!"
         exit
       fi
-      echo "Use the following key to create an account using the Jungle Testnet https://monitor.jungletestnet.io/#home."
-      echo "Public Key: $DAC_PUB"
-      echo "Be sure the account has at least 100 EOS which will be used for RAM, CPU, and Bandwidth. Do this using the faucet link."
       read -p " > ${prompt_color} Please paste the EOS account name you created:${reset} " EOS_ACCOUNT
+      echo "Fantastic! Now go back to the Jungle Testnet https://monitor.jungletestnet.io/#home page, click the faucet link, put in the account $EOS_ACCOUNT, check the Google Captcha, and push Send Coins."
     else
       exit
     fi
@@ -119,9 +95,12 @@ if $prompt_for_input ; then
 fi
 run_cmd "get account $daccustodian" &>/dev/null
 if [ "$?" != "0" ]; then
-  read -p " > ${prompt_color} Would you like to create this account now?:${reset} " response
+  read -p " > ${prompt_color} Would you like to create this account now (Y/N)?${reset} " response
   if [[ $response == "Y" || $response == "y" ]]; then
     create_act $EOS_ACCOUNT $daccustodian $DAC_PUB
+    echo "Before we continue, let's hit that faucet one more time so we'll have enough EOS for RAM. This time put in the $daccustodian account: https://monitor.jungletestnet.io/#home"
+    read -p "After you are done with the faucet, hit any key." response
+    run_cmd "transfer $daccustodian $EOS_ACCOUNT \"100 EOS\" \"\" -p $daccustodian"
   else
     exit
   fi
@@ -132,7 +111,7 @@ if $prompt_for_input ; then
 fi
 run_cmd "get account $dacauthority" &>/dev/null
 if [ "$?" != "0" ]; then
-  read -p " > ${prompt_color} Would you like to create this account now?:${reset} " response
+  read -p " > ${prompt_color} Would you like to create this account now (Y/N)?${reset} " response
   if [[ $response == "Y" || $response == "y" ]]; then
     create_act $EOS_ACCOUNT $dacauthority $DAC_PUB
   else
@@ -145,7 +124,7 @@ if $prompt_for_input ; then
 fi
 run_cmd "get account $dactoken" &>/dev/null
 if [ "$?" != "0" ]; then
-  read -p " > ${prompt_color} Would you like to create this account now?:${reset} " response
+  read -p " > ${prompt_color} Would you like to create this account now (Y/N)?${reset} " response
   if [[ $response == "Y" || $response == "y" ]]; then
     create_act $EOS_ACCOUNT $dactoken $DAC_PUB
   else
@@ -158,7 +137,7 @@ if $prompt_for_input ; then
 fi
 run_cmd "get account $dacowner" &>/dev/null
 if [ "$?" != "0" ]; then
-  read -p " > ${prompt_color} Would you like to create this account now?:${reset} " response
+  read -p " > ${prompt_color} Would you like to create this account now (Y/N)?${reset} " response
   if [[ $response == "Y" || $response == "y" ]]; then
     create_act $EOS_ACCOUNT $dacowner $DAC_PUB
   else
@@ -174,7 +153,7 @@ if [ "$dacservice" == "none" ]; then
 else
   run_cmd "get account $dacservice" &>/dev/null
   if [ "$?" != "0" ]; then
-    read -p " > ${prompt_color} Would you like to create this account now?:${reset} " response
+    read -p " > ${prompt_color} Would you like to create this account now (Y/N)?${reset} " response
     if [[ $response == "Y" || $response == "y" ]]; then
       create_act $EOS_ACCOUNT $dacservice $DAC_PUB
     else
@@ -188,7 +167,7 @@ if $prompt_for_input ; then
 fi
 run_cmd "get account $dacmultisigs" &>/dev/null
 if [ "$?" != "0" ]; then
-  read -p " > ${prompt_color} Would you like to create this account now?:${reset} " response
+  read -p " > ${prompt_color} Would you like to create this account now (Y/N)?${reset} " response
   if [[ $response == "Y" || $response == "y" ]]; then
     create_act $EOS_ACCOUNT $dacmultisigs $DAC_PUB
   else
@@ -201,7 +180,7 @@ if $prompt_for_input ; then
 fi
 run_cmd "get account $dacproposals" &>/dev/null
 if [ "$?" != "0" ]; then
-  read -p " > ${prompt_color} Would you like to create this account now?:${reset} " response
+  read -p " > ${prompt_color} Would you like to create this account now (Y/N)?${reset} " response
   if [[ $response == "Y" || $response == "y" ]]; then
     create_act $EOS_ACCOUNT $dacproposals $DAC_PUB
   else
@@ -214,13 +193,15 @@ run_cmd "set contract "$dactoken" "$DACCONTRACTS/eosdactoken/output/jungle/eosda
 
 if $prompt_for_input ; then
   read -p " > ${prompt_color} What Token Symbol do you want to create for your DAC?${reset} " TOKENSYBMOL
-  read -p " > ${prompt_color} How many tokens do you want to create for your DAC?${reset} " DACTOKEN_COUNT_CREATE
-  read -p " > ${prompt_color} How many tokens do you want to issue for your DAC?${reset} " DACTOKEN_COUNT_ISSUE
 fi
 
 token_stats="$(cleos --wallet-url $WALLET_URL -u $API_URL get currency stats $dactoken $TOKENSYBMOL)"
 
 if [ "$token_stats" == "{}" ]; then
+  if $prompt_for_input ; then
+    read -p " > ${prompt_color} How many tokens do you want to create for your DAC?${reset} " DACTOKEN_COUNT_CREATE
+    read -p " > ${prompt_color} How many tokens do you want to issue for your DAC?${reset} " DACTOKEN_COUNT_ISSUE
+  fi
   run_cmd "push action $dactoken create '[\"$dactoken\", \"$DACTOKEN_COUNT_CREATE $TOKENSYBMOL\", 0]' -p $dactoken"
   run_cmd "push action $dactoken issue '[\"$dactoken\", \"$DACTOKEN_COUNT_ISSUE $TOKENSYBMOL\", \"Issue\"]' -p $dactoken"
 else
@@ -375,5 +356,52 @@ fi
 echo "[[\"$lockupasset.0000 $TOKENSYBMOL\", $maxvotes, $numelected, $periodlength, \"$authaccount\", \"$tokenholder\", \"$serviceprovider\", $should_pay_via_service_provider, $initial_vote_quorum_percent, $vote_quorum_percent, $auth_threshold_high, $auth_threshold_mid, $auth_threshold_low, $lockup_release_time_delay, \"$requested_pay_max.0000 EOS\"]]" > dac_config.json
 echo "Setting dac configuration on $daccustodian"
 cat dac_config.json
-run_cmd "push action $daccustodian updateconfig dac_config.json -p $dacauthority"
+config="$(cleos --wallet-url $WALLET_URL -u $API_URL get table $daccustodian $daccustodian config | grep rows | awk '{print $2}')"
+if [ "$config" == "[]," ]; then
+  run_cmd "push action $daccustodian updateconfig dac_config.json -p $daccustodian"
+else
+  run_cmd "push action $daccustodian updateconfig dac_config.json -p $dacauthority"
+fi
 rm -f dac_config.json
+
+echo ""
+echo "====== CONGRATULATIONS! ======"
+echo ""
+
+if [ ! -f ./dac_conf.sh ]; then
+  read -p " > ${prompt_color} Would you like to save all your DAC variables to dac_conf.sh so you can easily run this again? Note, this will include your private key. (Y/N)?${reset} " response
+  if [[ "$response" == "Y" || "$response" == "y" ]]; then
+    echo "" > dac_conf.sh
+    echo "dacname=\"$dacname\"" >> dac_conf.sh
+    echo "DAC_PVT=\"$DAC_PVT\"" >> dac_conf.sh
+    echo "DAC_PUB=\"$DAC_PUB\"" >> dac_conf.sh
+    echo "EOS_ACCOUNT=\"$EOS_ACCOUNT\"" >> dac_conf.sh
+    echo "daccustodian=\"$daccustodian\"" >> dac_conf.sh
+    echo "dacauthority=\"$dacauthority\"" >> dac_conf.sh
+    echo "dactoken=\"$dactoken\"" >> dac_conf.sh
+    echo "dacowner=\"$dacowner\"" >> dac_conf.sh
+    echo "dacservice=\"$dacservice\"" >> dac_conf.sh
+    echo "dacmultisigs=\"$dacmultisigs\"" >> dac_conf.sh
+    echo "dacproposals=\"$dacproposals\"" >> dac_conf.sh
+    echo "TOKENSYBMOL=\"$TOKENSYBMOL\"" >> dac_conf.sh
+    echo "DACTOKEN_COUNT_CREATE=\"$DACTOKEN_COUNT_CREATE\"" >> dac_conf.sh
+    echo "DACTOKEN_COUNT_ISSUE=\"$DACTOKEN_COUNT_ISSUE\"" >> dac_conf.sh
+    echo "CONSTITUTION_URL=\"$CONSTITUTION_URL\"" >> dac_conf.sh
+    echo "lockupasset=\"$lockupasset\"" >> dac_conf.sh
+    echo "maxvotes=\"$maxvotes\"" >> dac_conf.sh
+    echo "numelected=\"$numelected\"" >> dac_conf.sh
+    echo "periodlength=\"$periodlength\"" >> dac_conf.sh
+    echo "authaccount=\"$authaccount\"" >> dac_conf.sh
+    echo "tokenholder=\"$tokenholder\"" >> dac_conf.sh
+    echo "serviceprovider=\"$serviceprovider\"" >> dac_conf.sh
+    echo "should_pay_via_service_provider=\"$should_pay_via_service_provider\"" >> dac_conf.sh
+    echo "initial_vote_quorum_percent=\"$initial_vote_quorum_percent\"" >> dac_conf.sh
+    echo "vote_quorum_percent=\"$vote_quorum_percent\"" >> dac_conf.sh
+    echo "auth_threshold_high=\"$auth_threshold_high\"" >> dac_conf.sh
+    echo "auth_threshold_mid=\"$auth_threshold_mid\"" >> dac_conf.sh
+    echo "auth_threshold_low=\"$auth_threshold_low\"" >> dac_conf.sh
+    echo "lockup_release_time_delay=\"$lockup_release_time_delay\"" >> dac_conf.sh
+    echo "requested_pay_max=\"$requested_pay_max\"" >> dac_conf.sh
+    echo "dac_conf.sh saved. Please be careful with this file as it contains your private key."
+  fi
+fi

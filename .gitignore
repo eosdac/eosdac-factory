@@ -1,3 +1,4 @@
 wallet.lock
 *.wallet
 *.wallet_password
+dac_conf.sh
