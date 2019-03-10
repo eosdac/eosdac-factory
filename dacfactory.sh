@@ -96,7 +96,7 @@ if $prompt_for_input ; then
 fi
 run_cmd "get account $daccustodian" &>/dev/null
 if [ "$?" != "0" ]; then
-  read -p " > ${prompt_color} Would you like to create this account now (Y/N)?${reset} " response
+  read -p " > ${prompt_color} Would you like to create the daccustodian account now (Y/N)?${reset} " response
   if [[ $response == "Y" || $response == "y" ]]; then
     create_act $EOS_ACCOUNT $daccustodian $DAC_PUB
     echo "Before we continue, let's hit that faucet one more time so we'll have enough EOS for RAM. This time put in the $daccustodian account: https://monitor.jungletestnet.io/#home"
@@ -112,7 +112,7 @@ if $prompt_for_input ; then
 fi
 run_cmd "get account $dacauthority" &>/dev/null
 if [ "$?" != "0" ]; then
-  read -p " > ${prompt_color} Would you like to create this account now (Y/N)?${reset} " response
+  read -p " > ${prompt_color} Would you like to create the dacauthority account now (Y/N)?${reset} " response
   if [[ $response == "Y" || $response == "y" ]]; then
     create_act $EOS_ACCOUNT $dacauthority $DAC_PUB
   else
@@ -125,7 +125,7 @@ if $prompt_for_input ; then
 fi
 run_cmd "get account $dactoken" &>/dev/null
 if [ "$?" != "0" ]; then
-  read -p " > ${prompt_color} Would you like to create this account now (Y/N)?${reset} " response
+  read -p " > ${prompt_color} Would you like to create the dactoken account now (Y/N)?${reset} " response
   if [[ $response == "Y" || $response == "y" ]]; then
     create_act $EOS_ACCOUNT $dactoken $DAC_PUB
   else
@@ -138,7 +138,7 @@ if $prompt_for_input ; then
 fi
 run_cmd "get account $dacowner" &>/dev/null
 if [ "$?" != "0" ]; then
-  read -p " > ${prompt_color} Would you like to create this account now (Y/N)?${reset} " response
+  read -p " > ${prompt_color} Would you like to create the dacowner account now (Y/N)?${reset} " response
   if [[ $response == "Y" || $response == "y" ]]; then
     create_act $EOS_ACCOUNT $dacowner $DAC_PUB
   else
@@ -149,12 +149,12 @@ fi
 if $prompt_for_input ; then
   read -p " > ${prompt_color} Service provider. If your DAC will not use a service provider, enter none. (Service Account):${reset} " dacservice
 fi
-if [ "$dacservice" == "none" ]; then
+if [ "$dacservice" == "none" || "$dacservice" == "" ]; then
   dacservice=""
 else
   run_cmd "get account $dacservice" &>/dev/null
   if [ "$?" != "0" ]; then
-    read -p " > ${prompt_color} Would you like to create this account now (Y/N)?${reset} " response
+    read -p " > ${prompt_color} Would you like to create the dacservice account now (Y/N)?${reset} " response
     if [[ $response == "Y" || $response == "y" ]]; then
       create_act $EOS_ACCOUNT $dacservice $DAC_PUB
     else
@@ -168,7 +168,7 @@ if $prompt_for_input ; then
 fi
 run_cmd "get account $dacmultisigs" &>/dev/null
 if [ "$?" != "0" ]; then
-  read -p " > ${prompt_color} Would you like to create this account now (Y/N)?${reset} " response
+  read -p " > ${prompt_color} Would you like to create the dacmultisigs account now (Y/N)?${reset} " response
   if [[ $response == "Y" || $response == "y" ]]; then
     create_act $EOS_ACCOUNT $dacmultisigs $DAC_PUB
   else
@@ -181,7 +181,7 @@ if $prompt_for_input ; then
 fi
 run_cmd "get account $dacproposals" &>/dev/null
 if [ "$?" != "0" ]; then
-  read -p " > ${prompt_color} Would you like to create this account now (Y/N)?${reset} " response
+  read -p " > ${prompt_color} Would you like to create the dacproposals account now (Y/N)?${reset} " response
   if [[ $response == "Y" || $response == "y" ]]; then
     create_act $EOS_ACCOUNT $dacproposals $DAC_PUB
   else
@@ -220,6 +220,11 @@ cd ../..
 
 echo "Set custodian contract on $daccustodian ..."
 run_cmd "set contract "$daccustodian" "$DACCONTRACTS/daccustodian/output/jungle/daccustodian" -p $daccustodian"
+
+echo "Compiling multisig contract..."
+cd $DACCONTRACTS/dacmultisigs
+./output/jungle/compile.sh
+cd ../..
 
 echo "Set multisig contract on $dacmultisigs ..."
 run_cmd "set contract "$dacmultisigs" "$DACCONTRACTS/dacmultisigs/output/jungle/dacmultisigs" -p $dacmultisigs"
