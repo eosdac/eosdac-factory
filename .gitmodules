@@ -10,9 +10,6 @@
 [submodule "contracts/dacproposals"]
 	path = contracts/dacproposals
 	url = https://github.com/eosdac/dacproposals.git
-[submodule "constitution"]
-	path = constitution
-	url = https://github.com/eosdac/constitution.git
 [submodule "memberclient"]
 	path = memberclient
 	url = https://github.com/eosdac/memberclient.git
