@@ -1,0 +1,13 @@
+diff --git a/eosio_build.sh b/eosio_build.sh
+index 173005a15..1c07a27ec 100755
+--- a/eosio_build.sh
++++ b/eosio_build.sh
+@@ -125,7 +125,7 @@
+       done
+    fi
+ 
+-   if [ ! -d "${SOURCE_DIR}/.git" ]; then
++   if [ ! "${SOURCE_DIR}/.git" ]; then
+       printf "\\n\\tThis build script only works with sources cloned from git\\n"
+       printf "\\tPlease clone a new eos directory with 'git clone https://github.com/EOSIO/eos --recursive'\\n"
+       printf "\\tSee the wiki for instructions: https://github.com/EOSIO/eos/wiki\\n"
