@@ -69,6 +69,7 @@ if $prompt_for_input ; then
       fi
       read -p " > ${prompt_color} Please paste the EOS account name you created:${reset} " EOS_ACCOUNT
       echo "Fantastic! Now go back to the Jungle Testnet https://monitor.jungletestnet.io/#home page, click the faucet link, put in the account $EOS_ACCOUNT, check the Google Captcha, and push Send Coins."
+      read -p " > ${prompt_color} Press any key after you are done using the Jungle Testnet faucet for $EOS_ACCOUNT.${reset} " response
     else
       exit
     fi
