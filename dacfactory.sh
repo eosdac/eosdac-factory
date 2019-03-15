@@ -6,6 +6,8 @@ source ./functions.sh
 prompt_color=`tput setaf 6`
 reset=`tput sgr0`
 
+WORKINGDIR="$(pwd)"
+
 prompt_for_input=true
 
 if [ -f ./dac_conf.sh ]; then
@@ -434,6 +436,67 @@ else
 fi
 rm -f dac_config.json
 
+echo "== Set up member client =="
+cd memberclient
+yarn install
+
+echo "Modify member client config..."
+
+sed -i '' "s/kasdactokens/$dactoken/" "./src/statics/config.jungle.json"
+sed -i '' "s/KASDAC/$TOKENSYBMOL/" "./src/statics/config.jungle.json"
+sed -i '' "s/\"totalSupply\"\: 1000000000.0000/\"totalSupply\"\: $DACTOKEN_COUNT_CREATE/" "./src/statics/config.jungle.json"
+sed -i '' "s/dacelections/$daccustodian/" "./src/statics/config.jungle.json"
+# TODO: add bot
+sed -i '' "s/piecesnbitss/piecesnbitss/" "./src/statics/config.jungle.json"
+sed -i '' "s/dacmultisigs/$dacmultisigs/" "./src/statics/config.jungle.json"
+sed -i '' "s/dacproposals/$dacproposals/" "./src/statics/config.jungle.json"
+# TODO: add escrow
+sed -i '' "s/eosdacescrow/eosdacescrow/" "./src/statics/config.jungle.json"
+sed -i '' "s/dacauthority/$dacauthority/" "./src/statics/config.jungle.json"
+sed -i '' "s/eosdacdoshhq/$dacowner/" "./src/statics/config.jungle.json"
+sed -i '' "s/http:\/\/ns3119712.ip-51-38-42.eu:3000/http:\/\/localhost:3000/" "./src/statics/config.jungle.json"
+
+echo "Updating language files to replace eosDAC with $dacname"
+cd src
+grep -lr --exclude-dir=".git" -e "eosDAC" . | xargs sed -i '' -e "s/eosDAC/$dacname/g"
+cd ..
+
+if [[ $prompt_for_input == true || "$logo_file_name" == "" ]]; then
+  echo "Please save an svg, png, or jpg logo in $WORKINGDIR/memberclient/src/assets/images/ and then include the file name here:"
+  read -p " > ${prompt_color} logo file name: ${reset}" logo_file_name
+fi
+echo "Adding logo to MyLayout.vue..."
+sed -i '' "s/logo-main-white.svg/$logo_file_name/" "./src/layouts/MyLayout.vue"
+sed -i '' "s/logo-notext-white.svg/$logo_file_name/" "./src/layouts/MyLayout.vue"
+sed -i '' "s/logo-main-black.svg/$logo_file_name/" "./src/layouts/MyLayout.vue"
+sed -i '' "s/logo-notext-black.svg/$logo_file_name/" "./src/layouts/MyLayout.vue"
+
+echo "Building memberclient with quasar build..."
+quasar build
+cd ..
+
+echo "Configuring watchers..."
+cp ./Actionscraper-rpc/watchers/config.jungle.js ./Actionscraper-rpc/watchers/config.js 
+sed -i '' "s/eosdac/$dacowner/" "./Actionscraper-rpc/watchers/config.js"
+sed -i '' "s/dacelections/$daccustodian/" "./Actionscraper-rpc/watchers/config.js"
+sed -i '' "s/kasdactokens/$dactoken/" "./Actionscraper-rpc/watchers/config.js"
+sed -i '' "s/dacmultisigs/$dacmultisigs/" "./Actionscraper-rpc/watchers/config.js"
+cd ./Actionscraper-rpc/
+yarn install
+cd ..
+
+echo "Configuring memberclient-api..."
+cp ./memberclient-api/config.example.json ./memberclient-api/config.json
+sed -i '' "s/\"eosdac\"/\"$dacowner\"/" "./memberclient-api/watchers/config.js"
+cd ./memberclient-api
+yarn install
+cd ..
+
+echo "Configuring permissions..."
+
+
+
+
 echo ""
 echo "====== CONGRATULATIONS! ======"
 echo ""
@@ -476,6 +539,7 @@ if [[ "$response" == "Y" || "$response" == "y" ]]; then
   echo "claim_threshold=\"$claim_threshold\"" >> dac_conf.sh
   echo "claim_approval_threshold_percent=\"$claim_approval_threshold_percent\"" >> dac_conf.sh
   echo "escrow_expiry=\"$escrow_expiry\"" >> dac_conf.sh
+  echo "logo_file_name=\"$logo_file_name\"" >> dac_conf.sh
   echo "dac_conf.sh saved. Please be careful with this file as it contains your private key."
 fi
 
