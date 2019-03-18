@@ -493,7 +493,84 @@ yarn install
 cd ..
 
 echo "Configuring permissions..."
+echo "{
+    \"threshold\" : 1,
+    \"keys\" : [],
+    \"accounts\": [{\"permission\":{\"actor\":\"$dacauthority\", \"permission\":\"active\"}, \"weight\":1}],
+    \"waits\": []
+}" > resign.json
 
+echo "{
+    \"threshold\": 2,
+    \"keys\": [],
+    \"accounts\": [
+        {\"permission\":{\"actor\":\"$dacauthority\", \"permission\":\"med\"}, \"weight\":2},
+        {\"permission\":{\"actor\":\"$daccustodian\", \"permission\":\"eosio.code\"}, \"weight\":1}
+    ],
+    \"waits\": [{\"wait_sec\":3600, \"weight\":1}]
+}" > daccustodian_transfer.json
+
+echo "{
+    \"threshold\": 1,
+    \"keys\": [{\"key\":\"$DAC_PUB\", \"weight\":1}],
+    \"accounts\": [
+        {\"permission\":{\"actor\":\"$daccustodian\", \"permission\":\"eosio.code\"}, \"weight\":1}
+    ],
+    \"waits\": []
+}" > dacauthority_owner.json
+
+echo "{
+    \"threshold\": 1,
+    \"keys\": [{\"key\":\"$DAC_PUB\", \"weight\":1}],
+    \"accounts\": [
+        {\"permission\":{\"actor\":\"$dacauthority\", \"permission\":\"high\"}, \"weight\":1}
+    ],
+    \"waits\": []
+}" > dacauthority_active.json
+
+# These have to be set now because they are required in daccustodian_transfer.json
+# These permissions are set in new period to the custodians with each configured threshold
+run_cmd "set account permission $dacauthority high $DAC_PUB active -p $dacauthority@owner"
+run_cmd "set account permission $dacauthority med $DAC_PUB high -p $dacauthority@owner"
+run_cmd "set account permission $dacauthority low $DAC_PUB med -p $dacauthority@owner"
+run_cmd "set account permission $dacauthority one $DAC_PUB low -p $dacauthority@owner"
+
+# resign dactokens account to dacauthority@active
+run_cmd "set account permission $dactoken active ./resign.json owner -p $dactoken@owner"
+run_cmd "set account permission $dactoken owner ./resign.json '' -p $dactoken@owner"
+
+# resign dacmultisigs account to dacauthority@active
+run_cmd "set account permission $dacmultisigs active ./resign.json owner -p $dacmultisigs@owner"
+run_cmd "set account permission $dacmultisigs owner ./resign.json '' -p $dacmultisigs@owner"
+
+# resign dacowner account to dacauthority@active, must allow timelocked transfers
+# from daccustodian@eosio.code
+# daccustodian_transfer.json allows the contract to make transfers with a time delay, or
+# dacauthority@med without a time delay.  dacowner must have permission in xfer to transfer tokens
+run_cmd "set account permission $dacowner xfer ./daccustodian_transfer.json active -p $dacowner@owner"
+run_cmd "set action permission $dacowner eosio.token transfer xfer -p $dacowner@owner"
+# Resign eosdacthedac
+run_cmd "set account permission $dacowner active ./resign.json owner -p $dacowner@owner"
+run_cmd "set account permission $dacowner owner ./resign.json '' -p $dacowner@owner"
+
+# Create xfer permission and give it permission to transfer TESTDAC tokens
+run_cmd "set account permission $daccustodian xfer ./daccustodian_transfer.json active -p $daccustodian@owner"
+run_cmd "set action permission $daccustodian $dactoken transfer xfer -p $daccustodian@owner"
+# Resign daccustodian
+run_cmd "set account permission $daccustodian active ./resign.json owner -p $daccustodian@owner"
+run_cmd "set account permission $daccustodian owner ./resign.json '' -p $daccustodian@owner"
+
+# Allow high to call any action on daccustodian
+run_cmd "set action permission $dacauthority $daccustodian '' high -p $dacauthority@owner"
+# These 2 actions require a medium permission
+run_cmd "set action permission $dacauthority $daccustodian firecust med -p $dacauthority@owner"
+run_cmd "set action permission $dacauthority $daccustodian firecand med -p $dacauthority@owner"
+# Allow one to call the multisig actions
+run_cmd "set action permission $dacauthority $dacmultisigs '' one -p $dacauthority@owner"
+
+#TODO: Look into this
+# set dacauthority@owner to point to daccustodian@eosio.code
+#run_cmd "set account permission $dacauthority active ./dacauthority_active.json owner -p $dacauthority@owner"
 
 
 
