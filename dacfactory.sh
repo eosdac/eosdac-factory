@@ -593,8 +593,7 @@ rm ./dacauthority_active.json
 rm ./dacauthority_owner.json
 
 if [[ ($prompt_for_input == true || "$create_test_custodians" == "") && DACPREFIX != "" ]]; then
-  echo "Would you like to create test custodians, vote them in, and call new period to active the DAC?"
-  read -p " > ${prompt_color} Would you like to create test custodians, vote them in, and call new period to active the DAC? (Y/N) ${reset}" create_test_custodians
+  read -p " > ${prompt_color} Would you like to create test custodians, vote them in, and call new period to activate the DAC? (Y/N) ${reset}" create_test_custodians
   if [[ $create_test_custodians == "Y" || $create_test_custodians == "y" ]]; then
     create_test_custodians="Y"
   else
@@ -696,7 +695,7 @@ if [[ "$create_test_custodians" == "Y" && DACPREFIX != "" ]]; then
   fi
 fi
 
-fun_cmd "push action $daccustodian newperiod '{"message":"New Period"}' -p $custodian5"
+run_cmd "push action $daccustodian newperiod '{"message":"New Period"}' -p $custodian5"
 
 echo ""
 echo "====== CONGRATULATIONS! ======"
