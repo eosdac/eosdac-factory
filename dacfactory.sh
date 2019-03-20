@@ -477,10 +477,10 @@ if [[ $prompt_for_input == true || "$logo_file_name" == "" ]]; then
   read -p " > ${prompt_color} logo file name: ${reset}" logo_file_name
 fi
 echo "Adding logo to MyLayout.vue..."
-sed -i '' "s/logo-main-white.svg/$logo_file_name/" "./src/layouts/MyLayout.vue"
-sed -i '' "s/logo-notext-white.svg/$logo_file_name/" "./src/layouts/MyLayout.vue"
-sed -i '' "s/logo-main-black.svg/$logo_file_name/" "./src/layouts/MyLayout.vue"
-sed -i '' "s/logo-notext-black.svg/$logo_file_name/" "./src/layouts/MyLayout.vue"
+sed -i '' "s/logo-main-light.svg/$logo_file_name/" "./src/layouts/MyLayout.vue"
+sed -i '' "s/logo-notext-light.svg/$logo_file_name/" "./src/layouts/MyLayout.vue"
+sed -i '' "s/logo-main-dark.svg/$logo_file_name/" "./src/layouts/MyLayout.vue"
+sed -i '' "s/logo-notext-dark.svg/$logo_file_name/" "./src/layouts/MyLayout.vue"
 
 echo "Building memberclient with quasar build..."
 quasar build
@@ -695,7 +695,7 @@ if [[ "$create_test_custodians" == "Y" && DACPREFIX != "" ]]; then
   fi
 fi
 
-run_cmd "push action $daccustodian newperiod '{"message":"New Period"}' -p $custodian5"
+run_cmd "push action $daccustodian newperiod '{\"message\":\"New Period\"}' -p $custodian5"
 
 echo ""
 echo "====== CONGRATULATIONS! ======"
