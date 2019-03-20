@@ -22,17 +22,28 @@ fi
 # If you ever don't have enough RAM for an account to set a contract, you can get more with this command:
 # ./jungle.sh system buyram dacfactory11 dacfac11cust "10.000 EOS"
 
-echo "========================================================="
-echo "=                                                       ="
-echo "=              Welcome to the DAC Factory!              ="
-echo "=                                                       ="
-echo "=                 provided by eosDAC                    ="
-echo "=                                                       ="
-echo "========================================================="
+echo ""
+echo "______  ___  _____  ______ ___  _____ _____ _____________   __"
+echo "|  _  \/ _ \/  __ \ |  ___/ _ \/  __ \_   _|  _  | ___ \ \ / /"
+echo "| | | / /_\ \ /  \/ | |_ / /_\ \ /  \/ | | | | | | |_/ /\ V / "
+echo "| | | |  _  | |     |  _||  _  | |     | | | | | |    /  \ /  "
+echo "| |/ /| | | | \__/\ | |  | | | | \__/\ | | \ \_/ / |\ \  | |  "
+echo "|___/ \_| |_/\____/ \_|  \_| |_/\____/ \_/  \___/\_| \_| \_/  "
+echo ""
+echo ""
+echo "=============================================================="
+echo "=                                                            ="
+echo "=                Welcome to the DAC Factory!                 ="
+echo "=                                                            ="
+echo "=                    provided by eosDAC                      ="
+echo "=                                                            ="
+echo "=============================================================="
 echo " "
 if $prompt_for_input ; then
   read -p " > ${prompt_color} What is the name of your DAC?${reset} " dacname
 fi
+
+#: <<'END_COMMENT'
 
 if [[ "$dacname" == "" ]]; then
   echo "You need a DAC Name"
@@ -249,15 +260,15 @@ if [ "$token_stats" == "{}" ]; then
     read -p " > ${prompt_color} How many tokens do you want to create for your DAC?${reset} " DACTOKEN_COUNT_CREATE
     read -p " > ${prompt_color} How many tokens do you want to issue for your DAC?${reset} " DACTOKEN_COUNT_ISSUE
   fi
-  run_cmd "push action $dactoken create '[\"$dactoken\", \"$DACTOKEN_COUNT_CREATE $TOKENSYBMOL\", 0]' -p $dactoken"
-  run_cmd "push action $dactoken issue '[\"$dactoken\", \"$DACTOKEN_COUNT_ISSUE $TOKENSYBMOL\", \"Issue\"]' -p $dactoken"
+  run_cmd "push action $dactoken create '[\"$dactoken\", \"$DACTOKEN_COUNT_CREATE.0000 $TOKENSYBMOL\", 0]' -p $dactoken"
+  run_cmd "push action $dactoken issue '[\"$dactoken\", \"$DACTOKEN_COUNT_ISSUE.0000 $TOKENSYBMOL\", \"Issue\"]' -p $dactoken"
 else
   echo "Token already created and issued."
   echo "$token_stats"
 fi
 
 echo "Adjusting compile script for custodian contract..."
-sed -i '' "s/kasdactokens/$TOKENSYBMOL/" "$DACCONTRACTS/daccustodian/output/jungle/compile.sh"
+sed -i '' "s/kasdactokens/$dactoken/" "$DACCONTRACTS/daccustodian/output/jungle/compile.sh"
 
 echo "Compiling custodian contract..."
 cd $DACCONTRACTS/daccustodian
@@ -293,7 +304,7 @@ if $prompt_for_input ; then
   #  service_account=""
   #fi
   echo "Number of required votes to participate in voting for a proposal?"
-  read -p " > ${prompt_color} proposal_threshold (7): ${reset}" proposal_threshold
+  read -p " > ${prompt_color} proposal_threshold (3): ${reset}" proposal_threshold
   if [ "$proposal_threshold" == "" ]; then
     proposal_threshold="3"
   fi
@@ -303,7 +314,7 @@ if $prompt_for_input ; then
     proposal_approval_threshold_percent="50"
   fi
   echo "Number of required votes to participate in voting for completing a proposal?"
-  read -p " > ${prompt_color} claim_threshold (5): ${reset}" claim_threshold
+  read -p " > ${prompt_color} claim_threshold (2): ${reset}" claim_threshold
   if [ "$claim_threshold" == "" ]; then
     claim_threshold="2"
   fi
@@ -487,7 +498,7 @@ cd ..
 
 echo "Configuring memberclient-api..."
 cp ./memberclient-api/config.example.json ./memberclient-api/config.json
-sed -i '' "s/\"eosdac\"/\"$dacowner\"/" "./memberclient-api/watchers/config.js"
+sed -i '' "s/\"eosdac\"/\"$dacowner\"/" "./memberclient-api/config.json"
 cd ./memberclient-api
 yarn install
 cd ..
@@ -510,14 +521,7 @@ echo "{
     \"waits\": [{\"wait_sec\":3600, \"weight\":1}]
 }" > daccustodian_transfer.json
 
-echo "{
-    \"threshold\": 1,
-    \"keys\": [{\"key\":\"$DAC_PUB\", \"weight\":1}],
-    \"accounts\": [
-        {\"permission\":{\"actor\":\"$daccustodian\", \"permission\":\"eosio.code\"}, \"weight\":1}
-    ],
-    \"waits\": []
-}" > dacauthority_owner.json
+## NOTE: When you are confident, change the keys part to just []
 
 echo "{
     \"threshold\": 1,
@@ -527,6 +531,17 @@ echo "{
     ],
     \"waits\": []
 }" > dacauthority_active.json
+
+## NOTE: When you are confident, change the keys part to just []
+
+echo "{
+    \"threshold\": 1,
+    \"keys\": [{\"key\":\"$DAC_PUB\", \"weight\":1}],
+    \"accounts\": [
+        {\"permission\":{\"actor\":\"$daccustodian\", \"permission\":\"eosio.code\"}, \"weight\":1}
+    ],
+    \"waits\": []
+}" > dacauthority_owner.json
 
 # These have to be set now because they are required in daccustodian_transfer.json
 # These permissions are set in new period to the custodians with each configured threshold
@@ -568,11 +583,120 @@ run_cmd "set action permission $dacauthority $daccustodian firecand med -p $daca
 # Allow one to call the multisig actions
 run_cmd "set action permission $dacauthority $dacmultisigs '' one -p $dacauthority@owner"
 
-#TODO: Look into this
-# set dacauthority@owner to point to daccustodian@eosio.code
-#run_cmd "set account permission $dacauthority active ./dacauthority_active.json owner -p $dacauthority@owner"
+# set dacauthority@active to point to daccustodian@eosio.code
+run_cmd "set account permission $dacauthority active ./dacauthority_active.json owner -p $dacauthority@owner"
+run_cmd "set account permission $dacauthority owner ./dacauthority_owner.json "" -p $dacauthority@owner"
 
+rm ./resign.json
+rm ./daccustodian_transfer.json
+rm ./dacauthority_active.json
+rm ./dacauthority_owner.json
 
+if [[ ($prompt_for_input == true || "$create_test_custodians" == "") && DACPREFIX != "" ]]; then
+  echo "Would you like to create test custodians, vote them in, and call new period to active the DAC?"
+  read -p " > ${prompt_color} Would you like to create test custodians, vote them in, and call new period to active the DAC? (Y/N) ${reset}" create_test_custodians
+  if [[ $create_test_custodians == "Y" || $create_test_custodians == "y" ]]; then
+    create_test_custodians="Y"
+  else
+    create_test_custodians="N"
+  fi
+fi
+
+if [[ "$create_test_custodians" == "Y" && DACPREFIX != "" ]]; then
+  if [[ "$CUSTODIAN_PVT" == "" && "$CUSTODIAN_PUB" == "" ]]; then
+    echo "Generating keys for custodians..."
+    CUSTODIAN_KEYS="$(cleos create key --to-console | awk '{ print $3 }')"
+    CUSTODIAN_PVT="$(echo $CUSTODIAN_KEYS | head -n1 | awk '{print $1;}')"
+    CUSTODIAN_PUB="$(echo $CUSTODIAN_KEYS | head -n1 | awk '{print $2;}')"
+    read -p " > ${prompt_color} Are you ready to view a private key on screen and save it securely (Y/N)?:${reset} " response
+    if [[ "$response" == "Y" || "$response" == "y" ]]; then
+      echo "Private Key: $CUSTODIAN_PVT"
+      read -p " > ${prompt_color} Press any key to clear the screen and continue${reset}" response
+      clear
+      echo " > ${prompt_color} Press verify your private key:${reset} "
+      read -s response
+      if [[ $response != $CUSTODIAN_PVT ]]; then
+        echo "Private Key does not match!"
+        exit
+      fi
+      echo "Public Key: $CUSTODIAN_PUB"
+      read -p " > ${prompt_color} Press verify your public key:${reset} " response
+      if [[ $response != $CUSTODIAN_PUB ]]; then
+        echo "Public Key does not match!"
+        exit
+      fi
+    else
+      exit
+    fi
+  fi
+
+  run_cmd "wallet unlock --name $EOS_ACCOUNT < $EOS_ACCOUNT.wallet_password"
+  run_cmd "wallet import --name $EOS_ACCOUNT --private-key $CUSTODIAN_PVT"
+
+  echo "Before we continue, let's hit the faucet so we'll have enough EOS for RAM. This time put in the $dactoken account: https://monitor.jungletestnet.io/#home"
+  read -p "After you are done with the faucet, hit any key." response
+  run_cmd "transfer $dactoken $EOS_ACCOUNT \"100 EOS\" \"\" -p $dactoken"
+  echo "And one more time with the faucet for the $dacowner account: https://monitor.jungletestnet.io/#home"
+  read -p "After you are done with the faucet, hit any key." response
+  run_cmd "transfer $dacowner $EOS_ACCOUNT \"100 EOS\" \"\" -p $dacowner"
+
+  # TODO: loop through and create as many custodians as needed based on the config
+  # TODO: for now, just create 5
+  custodian1="${DACPREFIX}cu11"
+  run_cmd "get account $custodian1" &>/dev/null
+  if [ "$?" != "0" ]; then
+    create_act $EOS_ACCOUNT $custodian1 $CUSTODIAN_PUB
+    ## TODO: adjust the amount transferred based on settings to reach active DAC
+    run_cmd "transfer -c $dactoken $dactoken $custodian1 \"100000.0000 $TOKENSYBMOL\" \"$custodian1\" -p $dactoken"
+    run_cmd "push action $dactoken memberreg '[\"$custodian1\", \"$CON_MD5\"]' -p $custodian1"
+    run_cmd "transfer -c $dactoken $custodian1 $daccustodian \"$lockupasset.0000 $TOKENSYBMOL\" \"$daccustodian\" -p $custodian1"
+    run_cmd "push action $daccustodian nominatecand '[\"$custodian1\", \"1.0000 $TOKENSYBMOL\"]' -p $custodian1"
+    run_cmd "push action $daccustodian votecust '[\"$custodian1\",[\"$custodian1\"]]' -p $custodian1"
+  fi
+  custodian2="${DACPREFIX}cu12"
+  run_cmd "get account $custodian2" &>/dev/null
+  if [ "$?" != "0" ]; then
+    create_act $EOS_ACCOUNT $custodian2 $CUSTODIAN_PUB
+    run_cmd "transfer -c $dactoken $dactoken $custodian2 \"100000.0000 $TOKENSYBMOL\" \"$custodian2\" -p $dactoken"
+    run_cmd "push action $dactoken memberreg '[\"$custodian2\", \"$CON_MD5\"]' -p $custodian2"
+    run_cmd "transfer -c $dactoken $custodian2 $daccustodian \"$lockupasset.0000 $TOKENSYBMOL\" \"$daccustodian\" -p $custodian2"
+    run_cmd "push action $daccustodian nominatecand '[\"$custodian2\", \"1.0000 $TOKENSYBMOL\"]' -p $custodian2"
+    run_cmd "push action $daccustodian votecust '[\"$custodian2\",[\"$custodian2\"]]' -p $custodian2"
+  fi
+  custodian3="${DACPREFIX}cu13"
+  run_cmd "get account $custodian3" &>/dev/null
+  if [ "$?" != "0" ]; then
+    create_act $EOS_ACCOUNT $custodian3 $CUSTODIAN_PUB
+    run_cmd "transfer -c $dactoken $dactoken $custodian3 \"100000.0000 $TOKENSYBMOL\" \"$custodian3\" -p $dactoken"
+    run_cmd "push action $dactoken memberreg '[\"$custodian3\", \"$CON_MD5\"]' -p $custodian3"
+    run_cmd "transfer -c $dactoken $custodian3 $daccustodian \"$lockupasset.0000 $TOKENSYBMOL\" \"$daccustodian\" -p $custodian3"
+    run_cmd "push action $daccustodian nominatecand '[\"$custodian3\", \"1.0000 $TOKENSYBMOL\"]' -p $custodian3"
+    run_cmd "push action $daccustodian votecust '[\"$custodian3\",[\"$custodian3\"]]' -p $custodian3"
+  fi
+  custodian4="${DACPREFIX}cu14"
+  run_cmd "get account $custodian4" &>/dev/null
+  if [ "$?" != "0" ]; then
+    create_act $EOS_ACCOUNT $custodian4 $CUSTODIAN_PUB
+    run_cmd "transfer -c $dactoken $dactoken $custodian4 \"100000.0000 $TOKENSYBMOL\" \"$custodian4\" -p $dactoken"
+    run_cmd "push action $dactoken memberreg '[\"$custodian4\", \"$CON_MD5\"]' -p $custodian4"
+    run_cmd "transfer -c $dactoken $custodian4 $daccustodian \"$lockupasset.0000 $TOKENSYBMOL\" \"$daccustodian\" -p $custodian4"
+    run_cmd "push action $daccustodian nominatecand '[\"$custodian4\", \"1.0000 $TOKENSYBMOL\"]' -p $custodian4"
+    run_cmd "push action $daccustodian votecust '[\"$custodian4\",[\"$custodian4\"]]' -p $custodian4"
+  fi
+  custodian5="${DACPREFIX}cu15"
+  run_cmd "get account $custodian5" &>/dev/null
+  if [ "$?" != "0" ]; then
+    create_act $EOS_ACCOUNT $custodian5 $CUSTODIAN_PUB
+    ## TODO: adjust the amount transferred based on settings to reach active DAC
+    run_cmd "transfer -c $dactoken $dactoken $custodian5 \"100000.0000 $TOKENSYBMOL\" \"$custodian5\" -p $dactoken"
+    run_cmd "push action $dactoken memberreg '[\"$custodian5\", \"$CON_MD5\"]' -p $custodian5"
+    run_cmd "transfer -c $dactoken $custodian5 $daccustodian \"$lockupasset.0000 $TOKENSYBMOL\" \"$daccustodian\" -p $custodian5"
+    run_cmd "push action $daccustodian nominatecand '[\"$custodian5\", \"1.0000 $TOKENSYBMOL\"]' -p $custodian5"
+    run_cmd "push action $daccustodian votecust '[\"$custodian5\",[\"$custodian5\"]]' -p $custodian5"
+  fi
+fi
+
+fun_cmd "push action $daccustodian newperiod '{"message":"New Period"}' -p $custodian5"
 
 echo ""
 echo "====== CONGRATULATIONS! ======"
@@ -585,6 +709,7 @@ if [[ "$response" == "Y" || "$response" == "y" ]]; then
   echo "DAC_PVT=\"$DAC_PVT\"" >> dac_conf.sh
   echo "DAC_PUB=\"$DAC_PUB\"" >> dac_conf.sh
   echo "EOS_ACCOUNT=\"$EOS_ACCOUNT\"" >> dac_conf.sh
+  echo "DACPREFIX=\"$DACPREFIX\"" >> dac_conf.sh
   echo "daccustodian=\"$daccustodian\"" >> dac_conf.sh
   echo "dacauthority=\"$dacauthority\"" >> dac_conf.sh
   echo "dactoken=\"$dactoken\"" >> dac_conf.sh
@@ -596,6 +721,7 @@ if [[ "$response" == "Y" || "$response" == "y" ]]; then
   echo "DACTOKEN_COUNT_CREATE=\"$DACTOKEN_COUNT_CREATE\"" >> dac_conf.sh
   echo "DACTOKEN_COUNT_ISSUE=\"$DACTOKEN_COUNT_ISSUE\"" >> dac_conf.sh
   echo "CONSTITUTION_URL=\"$CONSTITUTION_URL\"" >> dac_conf.sh
+  echo "CON_MD5=\"$CON_MD5\"" >> dac_conf.sh
   echo "lockupasset=\"$lockupasset\"" >> dac_conf.sh
   echo "maxvotes=\"$maxvotes\"" >> dac_conf.sh
   echo "numelected=\"$numelected\"" >> dac_conf.sh
@@ -617,6 +743,9 @@ if [[ "$response" == "Y" || "$response" == "y" ]]; then
   echo "claim_approval_threshold_percent=\"$claim_approval_threshold_percent\"" >> dac_conf.sh
   echo "escrow_expiry=\"$escrow_expiry\"" >> dac_conf.sh
   echo "logo_file_name=\"$logo_file_name\"" >> dac_conf.sh
+  echo "create_test_custodians=\"$create_test_custodians\"" >> dac_conf.sh
+  echo "CUSTODIAN_PVT=\"$CUSTODIAN_PVT\"" >> dac_conf.sh
+  echo "CUSTODIAN_PUB=\"$CUSTODIAN_PUB\"" >> dac_conf.sh
   echo "dac_conf.sh saved. Please be careful with this file as it contains your private key."
 fi
 
