@@ -429,7 +429,7 @@ if $prompt_for_input ; then
   if [ "$lockup_release_time_delay" == "" ]; then
     lockup_release_time_delay="7776000"
   fi
-  echo "What is the maximum amount of EOS pay a custodian can requested as a candidate?"
+  echo "What is the maximum amount of $TOKENSYBMOL pay a custodian can request as a candidate?"
   read -p " > ${prompt_color} requested_pay_max (50): ${reset}" requested_pay_max
   if [ "$requested_pay_max" == "" ]; then
     requested_pay_max="50"
