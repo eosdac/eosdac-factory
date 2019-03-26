@@ -13,3 +13,5 @@ You'll have an action scraper which takes on-chain data and stores it in mongodb
 The memberclient-api which takes that data out of mongodb and makes it available to your member client: https://github.com/eosdac/memberclient-api
 
 And the memberclient itself which uses Quasar and is how your DAC members will interact with the blockchain smart contracts that make up the DAC: https://github.com/eosdac/memberclient/
+
+You can view a view walking through this script here: https://www.youtube.com/watch?v=dtFZjJ1409M
