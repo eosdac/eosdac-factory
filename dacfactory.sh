@@ -643,23 +643,26 @@ if [[ "$create_test_custodians" == "Y" && DACPREFIX != "" ]]; then
     fi
   fi
 
-  run_cmd "wallet unlock --name $EOS_ACCOUNT < $EOS_ACCOUNT.wallet_password"
-  run_cmd "wallet import --name $EOS_ACCOUNT --private-key $CUSTODIAN_PVT"
-
-  echo "Before we continue, let's hit the faucet so we'll have enough EOS for RAM. This time put in the $dactoken account: https://monitor.jungletestnet.io/#home"
-  read -p "After you are done with the faucet, hit any key." response
-  run_cmd "transfer $dactoken $EOS_ACCOUNT \"100 EOS\" \"\" -p $dactoken"
-  echo "And one more time with the faucet for the $dacowner account: https://monitor.jungletestnet.io/#home"
-  read -p "After you are done with the faucet, hit any key." response
-  run_cmd "transfer $dacowner $EOS_ACCOUNT \"100 EOS\" \"\" -p $dacowner"
-
-  read -p " > ${prompt_color} How many tokens would you like to transfer to each of your test custodians? Keep in mind you have $DACTOKEN_COUNT_ISSUE tokens and need $initial_vote_quorum_percent percent used to launch the DAC. ${reset}" test_custodian_transfer_amount
-
   # TODO: loop through and create as many custodians as needed based on the config
   # TODO: for now, just create 5
   custodian1="${DACPREFIX}cu11"
   run_cmd "get account $custodian1" &>/dev/null
   if [ "$?" != "0" ]; then
+
+    # Do a bit of hacky work on the first one.
+
+    run_cmd "wallet unlock --name $EOS_ACCOUNT < $EOS_ACCOUNT.wallet_password"
+    run_cmd "wallet import --name $EOS_ACCOUNT --private-key $CUSTODIAN_PVT"
+
+    echo "Before we continue, let's hit the faucet so we'll have enough EOS for RAM. This time put in the $dactoken account: https://monitor.jungletestnet.io/#home"
+    read -p "After you are done with the faucet, hit any key." response
+    run_cmd "transfer $dactoken $EOS_ACCOUNT \"100 EOS\" \"\" -p $dactoken"
+    echo "And one more time with the faucet for the $dacowner account: https://monitor.jungletestnet.io/#home"
+    read -p "After you are done with the faucet, hit any key." response
+    run_cmd "transfer $dacowner $EOS_ACCOUNT \"100 EOS\" \"\" -p $dacowner"
+
+    read -p " > ${prompt_color} How many tokens would you like to transfer to each of your test custodians? Keep in mind you have $DACTOKEN_COUNT_ISSUE tokens and need $initial_vote_quorum_percent percent used to launch the DAC. ${reset}" test_custodian_transfer_amount
+
     create_act $EOS_ACCOUNT $custodian1 $CUSTODIAN_PUB
     ## TODO: adjust the amount transferred based on settings to reach active DAC
     run_cmd "transfer -c $dactoken $dactoken $custodian1 \"$test_custodian_transfer_amount.0000 $TOKENSYBMOL\" \"$custodian1\" -p $dactoken"
@@ -714,8 +717,13 @@ fi
 run_cmd "push action $daccustodian newperiod '{\"message\":\"New Period\"}' -p $custodian5"
 
 echo ""
+echo ""
+echo ""
 echo "====== CONGRATULATIONS! ======"
 echo ""
+echo ""
+echo ""
+echo "Next you'll want to get mongod running, along with the DAC API and the memberclient."
 
 read -p " > ${prompt_color} Would you like to save all your DAC variables to dac_conf.sh so you can easily run this again? Note, this will include your private key. (Y/N)?${reset} " response
 if [[ "$response" == "Y" || "$response" == "y" ]]; then
