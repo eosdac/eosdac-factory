@@ -3,11 +3,23 @@
 source ./conf.sh
 source ./functions.sh
 
+git submodule update --init --recursive
+
 prompt_color=`tput setaf 6`
 reset=`tput sgr0`
 
 WORKINGDIR="$(pwd)"
 
+KEOSD_PID="$(pgrep keosd)"
+
+if (( KEOSD_PID > 0 )); then
+  echo "keosd running with process ID $KEOSD_PID"
+else
+  echo "Please run ./keosd.sh in a separate terminal window to start the EOS key server before running this script."
+  exit
+fi
+
+DACPREFIX=""
 prompt_for_input=true
 
 if [ -f ./dac_conf.sh ]; then
@@ -108,7 +120,6 @@ fi
 
 echo "Next we'll create EOS accounts (if they don't already exist) for your DAC. Use only letters and numbers 1-5. The account name needs to be exactly 12 characters."
 
-DACPREFIX=""
 if $prompt_for_input ; then
   read -p " > ${prompt_color} Would you like to use an 8-character prefix for your DAC accounts, and we'll create them with suffixes like cust, auth, mult, tokn, ownr, prop? (Y/N):${reset} " response
   if [[ "$response" == "Y" || "$response" == "y" ]]; then
@@ -342,10 +353,10 @@ fi
 rm -f proposal_config.json
 
 if $prompt_for_input ; then
-  read -p " > ${prompt_color} Next you need a constitution. You can fork the github repo at https://github.com/eosdac/constitution to start, but ultimately you'll need to consult your own lawyers to ensure your DAC is set up according to your own legal needs. Once you have a raw markdown file of your constitution available online as a URL, enter that here. If you just want to start with our default, just hit enter to use https://github.com/eosdac/constitution/blob/41b17819a3e819f39092f72c29ffd466815868ce/constitution.md${reset}: " CONSTITUTION_URL
+  read -p " > ${prompt_color} Next you need a constitution. You can fork the github repo at https://github.com/eosdac/constitution to start, but ultimately you'll need to consult your own lawyers to ensure your DAC is set up according to your own legal needs. Once you have a raw markdown file of your constitution available online as a URL, enter that here. If you just want to start with our default, just hit enter to use https://raw.githubusercontent.com/eosdac/constitution/41b17819a3e819f39092f72c29ffd466815868ce/constitution.md${reset}: " CONSTITUTION_URL
 fi
 if [ "$CONSTITUTION_URL" == "" ]; then
-  CONSTITUTION_URL="https://github.com/eosdac/constitution/blob/41b17819a3e819f39092f72c29ffd466815868ce/constitution.md"
+  CONSTITUTION_URL="https://raw.githubusercontent.com/eosdac/constitution/41b17819a3e819f39092f72c29ffd466815868ce/constitution.md"
 fi
 wget -O constitution.md "$CONSTITUTION_URL"
 ARCH=$( uname )
@@ -354,6 +365,8 @@ if [ "$ARCH" == "Darwin" ]; then
 else
   CON_MD5=$(md5sum constitution.md | cut -d' ' -f1)
 fi
+
+#echo "Constitution hash: $CON_MD5"
 rm -f constitution.md
 
 echo "[\"$CONSTITUTION_URL\", \"$CON_MD5\"]" > terms.json
@@ -592,6 +605,7 @@ rm ./daccustodian_transfer.json
 rm ./dacauthority_active.json
 rm ./dacauthority_owner.json
 
+
 if [[ ($prompt_for_input == true || "$create_test_custodians" == "") && DACPREFIX != "" ]]; then
   read -p " > ${prompt_color} Would you like to create test custodians, vote them in, and call new period to activate the DAC? (Y/N) ${reset}" create_test_custodians
   if [[ $create_test_custodians == "Y" || $create_test_custodians == "y" ]]; then
@@ -639,6 +653,8 @@ if [[ "$create_test_custodians" == "Y" && DACPREFIX != "" ]]; then
   read -p "After you are done with the faucet, hit any key." response
   run_cmd "transfer $dacowner $EOS_ACCOUNT \"100 EOS\" \"\" -p $dacowner"
 
+  read -p " > ${prompt_color} How many tokens would you like to transfer to each of your test custodians? Keep in mind you have $DACTOKEN_COUNT_ISSUE tokens and need $initial_vote_quorum_percent percent used to launch the DAC. ${reset}" test_custodian_transfer_amount
+
   # TODO: loop through and create as many custodians as needed based on the config
   # TODO: for now, just create 5
   custodian1="${DACPREFIX}cu11"
@@ -646,7 +662,7 @@ if [[ "$create_test_custodians" == "Y" && DACPREFIX != "" ]]; then
   if [ "$?" != "0" ]; then
     create_act $EOS_ACCOUNT $custodian1 $CUSTODIAN_PUB
     ## TODO: adjust the amount transferred based on settings to reach active DAC
-    run_cmd "transfer -c $dactoken $dactoken $custodian1 \"100000.0000 $TOKENSYBMOL\" \"$custodian1\" -p $dactoken"
+    run_cmd "transfer -c $dactoken $dactoken $custodian1 \"$test_custodian_transfer_amount.0000 $TOKENSYBMOL\" \"$custodian1\" -p $dactoken"
     run_cmd "push action $dactoken memberreg '[\"$custodian1\", \"$CON_MD5\"]' -p $custodian1"
     run_cmd "transfer -c $dactoken $custodian1 $daccustodian \"$lockupasset.0000 $TOKENSYBMOL\" \"$daccustodian\" -p $custodian1"
     run_cmd "push action $daccustodian nominatecand '[\"$custodian1\", \"1.0000 $TOKENSYBMOL\"]' -p $custodian1"
@@ -656,7 +672,7 @@ if [[ "$create_test_custodians" == "Y" && DACPREFIX != "" ]]; then
   run_cmd "get account $custodian2" &>/dev/null
   if [ "$?" != "0" ]; then
     create_act $EOS_ACCOUNT $custodian2 $CUSTODIAN_PUB
-    run_cmd "transfer -c $dactoken $dactoken $custodian2 \"100000.0000 $TOKENSYBMOL\" \"$custodian2\" -p $dactoken"
+    run_cmd "transfer -c $dactoken $dactoken $custodian2 \"$test_custodian_transfer_amount.0000 $TOKENSYBMOL\" \"$custodian2\" -p $dactoken"
     run_cmd "push action $dactoken memberreg '[\"$custodian2\", \"$CON_MD5\"]' -p $custodian2"
     run_cmd "transfer -c $dactoken $custodian2 $daccustodian \"$lockupasset.0000 $TOKENSYBMOL\" \"$daccustodian\" -p $custodian2"
     run_cmd "push action $daccustodian nominatecand '[\"$custodian2\", \"1.0000 $TOKENSYBMOL\"]' -p $custodian2"
@@ -666,7 +682,7 @@ if [[ "$create_test_custodians" == "Y" && DACPREFIX != "" ]]; then
   run_cmd "get account $custodian3" &>/dev/null
   if [ "$?" != "0" ]; then
     create_act $EOS_ACCOUNT $custodian3 $CUSTODIAN_PUB
-    run_cmd "transfer -c $dactoken $dactoken $custodian3 \"100000.0000 $TOKENSYBMOL\" \"$custodian3\" -p $dactoken"
+    run_cmd "transfer -c $dactoken $dactoken $custodian3 \"$test_custodian_transfer_amount.0000 $TOKENSYBMOL\" \"$custodian3\" -p $dactoken"
     run_cmd "push action $dactoken memberreg '[\"$custodian3\", \"$CON_MD5\"]' -p $custodian3"
     run_cmd "transfer -c $dactoken $custodian3 $daccustodian \"$lockupasset.0000 $TOKENSYBMOL\" \"$daccustodian\" -p $custodian3"
     run_cmd "push action $daccustodian nominatecand '[\"$custodian3\", \"1.0000 $TOKENSYBMOL\"]' -p $custodian3"
@@ -676,7 +692,7 @@ if [[ "$create_test_custodians" == "Y" && DACPREFIX != "" ]]; then
   run_cmd "get account $custodian4" &>/dev/null
   if [ "$?" != "0" ]; then
     create_act $EOS_ACCOUNT $custodian4 $CUSTODIAN_PUB
-    run_cmd "transfer -c $dactoken $dactoken $custodian4 \"100000.0000 $TOKENSYBMOL\" \"$custodian4\" -p $dactoken"
+    run_cmd "transfer -c $dactoken $dactoken $custodian4 \"$test_custodian_transfer_amount.0000 $TOKENSYBMOL\" \"$custodian4\" -p $dactoken"
     run_cmd "push action $dactoken memberreg '[\"$custodian4\", \"$CON_MD5\"]' -p $custodian4"
     run_cmd "transfer -c $dactoken $custodian4 $daccustodian \"$lockupasset.0000 $TOKENSYBMOL\" \"$daccustodian\" -p $custodian4"
     run_cmd "push action $daccustodian nominatecand '[\"$custodian4\", \"1.0000 $TOKENSYBMOL\"]' -p $custodian4"
@@ -687,7 +703,7 @@ if [[ "$create_test_custodians" == "Y" && DACPREFIX != "" ]]; then
   if [ "$?" != "0" ]; then
     create_act $EOS_ACCOUNT $custodian5 $CUSTODIAN_PUB
     ## TODO: adjust the amount transferred based on settings to reach active DAC
-    run_cmd "transfer -c $dactoken $dactoken $custodian5 \"100000.0000 $TOKENSYBMOL\" \"$custodian5\" -p $dactoken"
+    run_cmd "transfer -c $dactoken $dactoken $custodian5 \"$test_custodian_transfer_amount.0000 $TOKENSYBMOL\" \"$custodian5\" -p $dactoken"
     run_cmd "push action $dactoken memberreg '[\"$custodian5\", \"$CON_MD5\"]' -p $custodian5"
     run_cmd "transfer -c $dactoken $custodian5 $daccustodian \"$lockupasset.0000 $TOKENSYBMOL\" \"$daccustodian\" -p $custodian5"
     run_cmd "push action $daccustodian nominatecand '[\"$custodian5\", \"1.0000 $TOKENSYBMOL\"]' -p $custodian5"
@@ -745,6 +761,7 @@ if [[ "$response" == "Y" || "$response" == "y" ]]; then
   echo "create_test_custodians=\"$create_test_custodians\"" >> dac_conf.sh
   echo "CUSTODIAN_PVT=\"$CUSTODIAN_PVT\"" >> dac_conf.sh
   echo "CUSTODIAN_PUB=\"$CUSTODIAN_PUB\"" >> dac_conf.sh
+  echo "test_custodian_transfer_amount=\"$test_custodian_transfer_amount\"" >> dac_conf.sh
   echo "dac_conf.sh saved. Please be careful with this file as it contains your private key."
 fi
 
