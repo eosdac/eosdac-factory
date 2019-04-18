@@ -3,7 +3,9 @@ reset=`tput sgr0`
 
 run_cmd() {
         cmd="$1";
-        echo -e "\n\n >> ${green} Next command: $1 \n\n ${reset}";
+        if [[ $cmd != *"private-key"* ]]; then
+            echo -e "\n\n >> ${green} Next command: $1 \n\n ${reset}";
+        fi
         #wait;
         #read -p "Press enter to continue ${reset}";
         eval "cleos --wallet-url $WALLET_URL -u $API_URL $1";
