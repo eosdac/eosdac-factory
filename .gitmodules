@@ -25,3 +25,9 @@
 [submodule "Actionscraper-rpc"]
 	path = Actionscraper-rpc
 	url = https://github.com/eosdac/Actionscraper-rpc.git
+[submodule "eosdac-api"]
+	path = eosdac-api
+	url = https://github.com/eosdac/eosdac-api.git
+[submodule "eosdac-client"]
+	path = eosdac-client
+	url = https://github.com/eosdac/eosdac-client.git
