@@ -19,6 +19,7 @@ else
   exit
 fi
 
+LIB=""
 TOKENSYBMOL=""
 DACPREFIX=""
 prompt_for_input=true
@@ -75,6 +76,10 @@ if [[ "$dacname" == "" ]]; then
 fi
 
 echo "Thank you, $dacname"
+
+if [ "$LIB" == "" ]; then
+  LIB="$(cleos get info | grep 'last_irreversible_block_num' | awk '{print $2}' | sed 's/,$//')"
+fi
 
 if $prompt_for_input ; then
   read -p " > ${prompt_color} Have you already created an EOS account for your DAC (Y/N)?${reset} " response
@@ -528,6 +533,7 @@ sed_compatible "s/eosio.msig/eosiomsigold/" "jungle.config.js"
 # If we do that, we'll have to login to the RabbitMQ interface to create that virtual host: https://www.tutlane.com/tutorial/rabbitmq/rabbitmq-virtual-hosts
 sed_compatible "s/amqp:\/\/user\:pass@host\/vhost/amqp:\/\/guest\:guest@localhost\//" "jungle.config.js"
 sed_compatible "s/https:\/\/api-jungle.eosdac.io/http:\/\/localhost:8383/" "jungle.config.js"
+sed_compatible "s/12345/$LIB/" "jungle.config.js"
 
 cat > ecosystem.config.js <<EOL
 module.exports = {
@@ -654,7 +660,6 @@ rm ./resign.json
 rm ./daccustodian_transfer.json
 rm ./dacauthority_active.json
 rm ./dacauthority_owner.json
-
 
 if [[ ($prompt_for_input == true || "$create_test_custodians" == "") && DACPREFIX != "" ]]; then
   read -p " > ${prompt_color} Would you like to create test custodians, vote them in, and call new period to activate the DAC? (Y/N) ${reset}" create_test_custodians
@@ -820,6 +825,7 @@ if [[ "$response" == "Y" || "$response" == "y" ]]; then
   echo "CUSTODIAN_PUB=\"$CUSTODIAN_PUB\"" >> dac_conf.sh
   echo "test_custodian_transfer_amount=\"$test_custodian_transfer_amount\"" >> dac_conf.sh
   echo "extensions_github=\"$extensions_github\"" >> dac_conf.sh
+  echo "LIB=\"$LIB\"" >> dac_conf.sh
 
   echo "dac_conf.sh saved. Please be careful with this file as it contains your private key.\n"
 
