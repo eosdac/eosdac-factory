@@ -78,7 +78,7 @@ fi
 echo "Thank you, $dacname"
 
 if [ "$LIB" == "" ]; then
-  LIB="$(cleos get info | grep 'last_irreversible_block_num' | awk '{print $2}' | sed 's/,$//')"
+  LIB="$(cleos --wallet-url $WALLET_URL -u $API_URL get info | grep 'last_irreversible_block_num' | awk '{print $2}' | sed 's/,$//')"
 fi
 
 if $prompt_for_input ; then
@@ -156,7 +156,7 @@ if [ "$?" != "0" ]; then
   read -p " > ${prompt_color} Would you like to create the daccustodian account ($daccustodian) now (Y/N)?${reset} " response
   if [[ $response == "Y" || $response == "y" ]]; then
     create_act $EOS_ACCOUNT $daccustodian $DAC_PUB
-    echo "Before we continue, let's hit that faucet one more time so we'll have enough EOS for RAM. This time put in the $daccustodian account: https://monitor.jungletestnet.io/#home"
+    echo "Before we continue, let's hit that faucet again so we'll have enough EOS for RAM. This time put in the $daccustodian account: https://monitor.jungletestnet.io/#home"
     read -p "After you are done with the faucet, hit any key." response
     run_cmd "transfer $daccustodian $EOS_ACCOUNT \"100 EOS\" \"\" -p $daccustodian"
   else
@@ -234,6 +234,9 @@ else
     read -p " > ${prompt_color} Would you like to create the dacservice account ($dacservice) now (Y/N)?${reset} " response
     if [[ $response == "Y" || $response == "y" ]]; then
       create_act $EOS_ACCOUNT $dacservice $DAC_PUB
+      echo "Okay, let's hit that faucet again so we'll have enough EOS for RAM. This time put in the $dacservice account: https://monitor.jungletestnet.io/#home"
+      read -p "After you are done with the faucet, hit any key." response
+      run_cmd "transfer $dacservice $EOS_ACCOUNT \"100 EOS\" \"\" -p $dacservice"
     else
       exit
     fi
@@ -505,6 +508,7 @@ sed_compatible "s/eosdacescrow/eosdacescrow/" "./src/extensions/statics/config/c
 sed_compatible "s/dacauthority/$dacauthority/" "./src/extensions/statics/config/config.jungle.json"
 sed_compatible "s/eosdacdoshhq/$dacowner/" "./src/extensions/statics/config/config.jungle.json"
 sed_compatible "s/http:\/\/ns3119712.ip-51-38-42.eu:3000/http:\/\/localhost:3000/" "./src/extensions/statics/config/config.jungle.json"
+sed_compatible "s/https:\/\/api-jungle.eosdac.io/http:\/\/localhost:8383/" "./src/extensions/statics/config/config.jungle.json"
 
 echo "Building dac client with quasar build..."
 quasar build
@@ -527,12 +531,11 @@ sed_compatible "s/dacelections/$daccustodian/" "jungle.config.js"
 sed_compatible "s/daccustodian/$daccustodian/" "jungle.config.js"
 sed_compatible "s/dacmultisigs/$dacmultisigs/" "jungle.config.js"
 sed_compatible "s/dacproposals/$dacproposals/" "jungle.config.js"
-sed_compatible "s/eosdac/$DACPREFIX/" "jungle.config.js"
+sed_compatible "s/'eosdac'/'$DACPREFIX'/" "jungle.config.js"
 sed_compatible "s/eosio.msig/eosiomsigold/" "jungle.config.js"
 # use a blank virtual host for now. Otherwise, we could add $DACPREFIX after localhost\/ if we wanted to support multiple DACS.
 # If we do that, we'll have to login to the RabbitMQ interface to create that virtual host: https://www.tutlane.com/tutorial/rabbitmq/rabbitmq-virtual-hosts
 sed_compatible "s/amqp:\/\/user\:pass@host\/vhost/amqp:\/\/guest\:guest@localhost\//" "jungle.config.js"
-sed_compatible "s/https:\/\/api-jungle.eosdac.io/http:\/\/localhost:8383/" "jungle.config.js"
 sed_compatible "s/12345/$LIB/" "jungle.config.js"
 
 cat > ecosystem.config.js <<EOL
