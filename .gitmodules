@@ -31,3 +31,6 @@
 [submodule "eosdac-client"]
 	path = eosdac-client
 	url = https://github.com/eosdac/eosdac-client.git
+[submodule "eosio-statereceiver"]
+	path = eosio-statereceiver
+	url = https://github.com/eosdac/eosio-statereceiver.git
