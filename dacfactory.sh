@@ -524,7 +524,9 @@ sed_compatible "s/dacmultisigs/$dacmultisigs/" "jungle.config.js"
 sed_compatible "s/dacproposals/$dacproposals/" "jungle.config.js"
 sed_compatible "s/eosdac/$DACPREFIX/" "jungle.config.js"
 sed_compatible "s/eosio.msig/eosiomsigold/" "jungle.config.js"
-sed_compatible "s/amqp:\/\/user\:pass@host\/vhost/amqp:\/\/guest\:guest@localhost\/$DACPREFIX/" "jungle.config.js"
+# use a blank virtual host for now. Otherwise, we could add $DACPREFIX after localhost\/ if we wanted to support multiple DACS.
+# If we do that, we'll have to login to the RabbitMQ interface to create that virtual host: https://www.tutlane.com/tutorial/rabbitmq/rabbitmq-virtual-hosts
+sed_compatible "s/amqp:\/\/user\:pass@host\/vhost/amqp:\/\/guest\:guest@localhost\//" "jungle.config.js"
 sed_compatible "s/https:\/\/api-jungle.eosdac.io/http:\/\/localhost:8383/" "jungle.config.js"
 
 cat > ecosystem.config.js <<EOL
