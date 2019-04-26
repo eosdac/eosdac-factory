@@ -17,3 +17,11 @@ create_act() {
   key="$3"
   eval "cleos --wallet-url $WALLET_URL -u $API_URL system newaccount --stake-cpu \"5.0000 EOS\" --stake-net \"1.0000 EOS\" --transfer --buy-ram-kbytes 1025 $creator $act $key"
 }
+
+sed_compatible() {
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    eval 'sed -i "" $1 $2'
+  else
+    eval "sed -i $1 $2"
+  fi
+}
