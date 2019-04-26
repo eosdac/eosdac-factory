@@ -10,18 +10,18 @@
 [submodule "contracts/dacproposals"]
 	path = contracts/dacproposals
 	url = https://github.com/eosdac/dacproposals.git
-[submodule "memberclient"]
-	path = memberclient
-	url = https://github.com/eosdac/memberclient.git
 [submodule "eos"]
 	path = eos
 	url = https://github.com/EOS-Mainnet/eos.git
 [submodule "eosio.cdt"]
 	path = eosio.cdt
 	url = https://github.com/EOSIO/eosio.cdt.git
-[submodule "memberclient-api"]
-	path = memberclient-api
-	url = https://github.com/eosdac/memberclient-api.git
-[submodule "Actionscraper-rpc"]
-	path = Actionscraper-rpc
-	url = https://github.com/eosdac/Actionscraper-rpc.git
+[submodule "eosdac-api"]
+	path = eosdac-api
+	url = https://github.com/eosdac/eosdac-api.git
+[submodule "eosdac-client"]
+	path = eosdac-client
+	url = https://github.com/eosdac/eosdac-client.git
+[submodule "eosio-statereceiver"]
+	path = eosio-statereceiver
+	url = https://github.com/eosdac/eosio-statereceiver.git

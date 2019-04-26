@@ -10,7 +10,7 @@ reset=`tput sgr0`
 
 WORKINGDIR="$(pwd)"
 
-KEOSD_PID="$(pgrep keosd -x)"
+KEOSD_PID="$(pgrep -x keosd)"
 
 if (( KEOSD_PID > 0 )); then
   echo "keosd running with process ID $KEOSD_PID"
@@ -19,6 +19,8 @@ else
   exit
 fi
 
+LIB=""
+TOKENSYBMOL=""
 DACPREFIX=""
 prompt_for_input=true
 
@@ -51,6 +53,17 @@ echo "=                    provided by eosDAC                      ="
 echo "=                                                            ="
 echo "=============================================================="
 echo " "
+
+
+if $prompt_for_input ; then
+  if [ "$extensions_github" == "" ]; then
+    read -p " > ${prompt_color} Enter your forked and customized eosdac-client-extension repository .git url. If you'd like to use the default eosDAC branding, hit enter to use https://github.com/eosdac/eosdac-client-extension.git${reset} " extensions_github
+    if [ "$extensions_github" == "" ]; then
+      extensions_github="https://github.com/eosdac/eosdac-client-extension.git"
+    fi
+  fi
+fi
+
 if $prompt_for_input ; then
   read -p " > ${prompt_color} What is the name of your DAC?${reset} " dacname
 fi
@@ -63,6 +76,10 @@ if [[ "$dacname" == "" ]]; then
 fi
 
 echo "Thank you, $dacname"
+
+if [ "$LIB" == "" ]; then
+  LIB="$(cleos get info | grep 'last_irreversible_block_num' | awk '{print $2}' | sed 's/,$//')"
+fi
 
 if $prompt_for_input ; then
   read -p " > ${prompt_color} Have you already created an EOS account for your DAC (Y/N)?${reset} " response
@@ -261,7 +278,9 @@ echo "Set token contract on $dactoken ..."
 run_cmd "set contract "$dactoken" "$DACCONTRACTS/eosdactoken/output/jungle/eosdactokens" -p $dactoken"
 
 if $prompt_for_input ; then
-  read -p " > ${prompt_color} What Token Symbol do you want to create for your DAC?${reset} " TOKENSYBMOL
+  if [ "$TOKENSYBMOL" == "" ]; then
+    read -p " > ${prompt_color} What Token Symbol do you want to create for your DAC?${reset} " TOKENSYBMOL
+  fi
 fi
 
 token_stats="$(cleos --wallet-url $WALLET_URL -u $API_URL get currency stats $dactoken $TOKENSYBMOL)"
@@ -279,7 +298,7 @@ else
 fi
 
 echo "Adjusting compile script for custodian contract..."
-sed -i "s/kasdactokens/$dactoken/" "$DACCONTRACTS/daccustodian/output/jungle/compile.sh"
+sed_compatible "s/kasdactokens/$dactoken/" "$DACCONTRACTS/daccustodian/output/jungle/compile.sh"
 
 echo "Compiling custodian contract..."
 cd $DACCONTRACTS/daccustodian
@@ -288,6 +307,10 @@ cd ../..
 
 echo "Set custodian contract on $daccustodian ..."
 run_cmd "set contract "$daccustodian" "$DACCONTRACTS/daccustodian/output/jungle/daccustodian" -p $daccustodian"
+
+echo "Adjusting compile script for multisig contract..."
+sed_compatible "s/dacauthority/$dacauthority/" "$DACCONTRACTS/dacmultisigs/dacmultisigs.cpp"
+sed_compatible "s/eosio.msig/eosiomsigold/" "$DACCONTRACTS/dacmultisigs/dacmultisigs.cpp"
 
 echo "Compiling multisig contract..."
 cd $DACCONTRACTS/dacmultisigs
@@ -353,14 +376,13 @@ fi
 rm -f proposal_config.json
 
 if $prompt_for_input ; then
-  read -p " > ${prompt_color} Next you need a constitution. You can fork the github repo at https://github.com/eosdac/constitution to start, but ultimately you'll need to consult your own lawyers to ensure your DAC is set up according to your own legal needs. Once you have a raw markdown file of your constitution available online as a URL, enter that here. If you just want to start with our default, just hit enter to use https://raw.githubusercontent.com/eosdac/constitution/41b17819a3e819f39092f72c29ffd466815868ce/constitution.md${reset}: " CONSTITUTION_URL
+  read -p " > ${prompt_color} Next you need a constitution. You can fork the github repo at https://github.com/eosdac/constitution to start, but ultimately you'll need to consult your own lawyers to ensure your DAC is set up according to your own legal needs. Once you have a raw markdown file of your constitution available online as a URL, enter that here. If you just want to start with our default, just hit enter to use https://raw.githubusercontent.com/eosdac/constitution/v4/constitution.md${reset}: " CONSTITUTION_URL
 fi
 if [ "$CONSTITUTION_URL" == "" ]; then
-  CONSTITUTION_URL="https://raw.githubusercontent.com/eosdac/constitution/41b17819a3e819f39092f72c29ffd466815868ce/constitution.md"
+  CONSTITUTION_URL="https://raw.githubusercontent.com/eosdac/constitution/v4/constitution.md"
 fi
 wget -O constitution.md "$CONSTITUTION_URL"
-ARCH=$( uname )
-if [ "$ARCH" == "Darwin" ]; then
+if [[ "$OSTYPE" == "darwin"* ]]; then
   CON_MD5=$(md5 constitution.md | cut -d' ' -f4)
 else
   CON_MD5=$(md5sum constitution.md | cut -d' ' -f1)
@@ -460,60 +482,94 @@ else
 fi
 rm -f dac_config.json
 
-echo "== Set up member client =="
-cd memberclient
-yarn install
+echo "== Set up DAC client =="
+cd eosdac-client
+yarn
 
-echo "Modify member client config..."
-
-sed -i "s/kasdactokens/$dactoken/" "./src/statics/config.jungle.json"
-sed -i "s/KASDAC/$TOKENSYBMOL/" "./src/statics/config.jungle.json"
-sed -i "s/\"totalSupply\"\: 1000000000.0000/\"totalSupply\"\: $DACTOKEN_COUNT_CREATE/" "./src/statics/config.jungle.json"
-sed -i "s/dacelections/$daccustodian/" "./src/statics/config.jungle.json"
-# TODO: add bot
-sed -i "s/piecesnbitss/piecesnbitss/" "./src/statics/config.jungle.json"
-sed -i "s/dacmultisigs/$dacmultisigs/" "./src/statics/config.jungle.json"
-sed -i "s/dacproposals/$dacproposals/" "./src/statics/config.jungle.json"
-# TODO: add escrow
-sed -i "s/eosdacescrow/eosdacescrow/" "./src/statics/config.jungle.json"
-sed -i "s/dacauthority/$dacauthority/" "./src/statics/config.jungle.json"
-sed -i "s/eosdacdoshhq/$dacowner/" "./src/statics/config.jungle.json"
-sed -i "s/http:\/\/ns3119712.ip-51-38-42.eu:3000/http:\/\/localhost:3000/" "./src/statics/config.jungle.json"
-
-echo "Updating language files to replace eosDAC with $dacname"
-cd src
-grep -lr --exclude-dir=".git" -e "eosDAC" . | xargs sed -i -e "s/eosDAC/$dacname/g"
-cd ..
-
-if [[ $prompt_for_input == true || "$logo_file_name" == "" ]]; then
-  echo "Please save an svg, png, or jpg logo in $WORKINGDIR/memberclient/src/assets/images/ and then include the file name here:"
-  read -p " > ${prompt_color} logo file name: ${reset}" logo_file_name
+if [ -z "$(ls -A ./src/extensions)" ]; then
+  yarn add_extensions $extensions_github extensions
 fi
-echo "Adding logo to MyLayout.vue..."
-sed -i "s/logo-main-light.svg/$logo_file_name/" "./src/layouts/MyLayout.vue"
-sed -i "s/logo-notext-light.svg/$logo_file_name/" "./src/layouts/MyLayout.vue"
-sed -i "s/logo-main-dark.svg/$logo_file_name/" "./src/layouts/MyLayout.vue"
-sed -i "s/logo-notext-dark.svg/$logo_file_name/" "./src/layouts/MyLayout.vue"
 
-echo "Building memberclient with quasar build..."
+echo "Modify DAC client config..."
+
+sed_compatible "s/kasdactokens/$dactoken/" "./src/extensions/statics/config/config.jungle.json"
+sed_compatible "s/KASDAC/$TOKENSYBMOL/" "./src/extensions/statics/config/config.jungle.json"
+sed_compatible "s/1000000000.0000/$DACTOKEN_COUNT_CREATE.0000/" "./src/extensions/statics/config/config.jungle.json"
+sed_compatible "s/dacelections/$daccustodian/" "./src/extensions/statics/config/config.jungle.json"
+# TODO: add bot
+sed_compatible "s/piecesnbitss/piecesnbitss/" "./src/extensions/statics/config/config.jungle.json"
+sed_compatible "s/dacmultisigs/$dacmultisigs/" "./src/extensions/statics/config/config.jungle.json"
+sed_compatible "s/dacproposals/$dacproposals/" "./src/extensions/statics/config/config.jungle.json"
+# TODO: add escrow
+sed_compatible "s/eosdacescrow/eosdacescrow/" "./src/extensions/statics/config/config.jungle.json"
+sed_compatible "s/dacauthority/$dacauthority/" "./src/extensions/statics/config/config.jungle.json"
+sed_compatible "s/eosdacdoshhq/$dacowner/" "./src/extensions/statics/config/config.jungle.json"
+sed_compatible "s/http:\/\/ns3119712.ip-51-38-42.eu:3000/http:\/\/localhost:3000/" "./src/extensions/statics/config/config.jungle.json"
+
+echo "Building dac client with quasar build..."
 quasar build
 cd ..
 
-echo "Configuring watchers..."
-cp ./Actionscraper-rpc/watchers/config.jungle.js ./Actionscraper-rpc/watchers/config.js 
-sed -i "s/eosdac/$dacowner/" "./Actionscraper-rpc/watchers/config.js"
-sed -i "s/dacelections/$daccustodian/" "./Actionscraper-rpc/watchers/config.js"
-sed -i "s/kasdactokens/$dactoken/" "./Actionscraper-rpc/watchers/config.js"
-sed -i "s/dacmultisigs/$dacmultisigs/" "./Actionscraper-rpc/watchers/config.js"
-cd ./Actionscraper-rpc/
-yarn install
+echo "Building eosio-statereceiver..."
+cd eosio-statereceiver 
+npm install
 cd ..
 
-echo "Configuring memberclient-api..."
-cp ./memberclient-api/config.example.json ./memberclient-api/config.json
-sed -i "s/\"eosdac\"/\"$dacowner\"/" "./memberclient-api/config.json"
-cd ./memberclient-api
-yarn install
+echo "Configuring eosdac-api..."
+cd eosdac-api
+npm install
+cp example.config.js jungle.config.js
+
+sed_compatible "s/eosdacdoshhq/$dacowner/" "jungle.config.js"
+sed_compatible "s/kasdactokens/$dactoken/" "jungle.config.js"
+sed_compatible "s/dacauthority/$dacauthority/" "jungle.config.js"
+sed_compatible "s/dacelections/$daccustodian/" "jungle.config.js"
+sed_compatible "s/daccustodian/$daccustodian/" "jungle.config.js"
+sed_compatible "s/dacmultisigs/$dacmultisigs/" "jungle.config.js"
+sed_compatible "s/dacproposals/$dacproposals/" "jungle.config.js"
+sed_compatible "s/eosdac/$DACPREFIX/" "jungle.config.js"
+sed_compatible "s/eosio.msig/eosiomsigold/" "jungle.config.js"
+# use a blank virtual host for now. Otherwise, we could add $DACPREFIX after localhost\/ if we wanted to support multiple DACS.
+# If we do that, we'll have to login to the RabbitMQ interface to create that virtual host: https://www.tutlane.com/tutorial/rabbitmq/rabbitmq-virtual-hosts
+sed_compatible "s/amqp:\/\/user\:pass@host\/vhost/amqp:\/\/guest\:guest@localhost\//" "jungle.config.js"
+sed_compatible "s/https:\/\/api-jungle.eosdac.io/http:\/\/localhost:8383/" "jungle.config.js"
+sed_compatible "s/12345/$LIB/" "jungle.config.js"
+
+cat > ecosystem.config.js <<EOL
+module.exports = {
+    apps: [
+        {
+            name: "eosdac-filler-jungle",
+            script: "./eosdac-filler.js",
+            node_args: ["--max-old-space-size=8192"],
+            autorestart: true,
+            kill_timeout: 3600,
+            env: {
+                'CONFIG': 'jungle'
+            }
+        },
+        {
+            name: 'eosdac-processor-jungle',
+            script: "./eosdac-processor.js",
+            autorestart: true,
+            env: {
+                'CONFIG': 'jungle'
+            }
+        },
+        {
+            name: 'eosdac-api-jungle',
+            script: "./eosdac-api.js",
+            autorestart: true,
+            env: {
+                'CONFIG': 'jungle',
+                'SERVER_PORT': 8383,
+                'SERVER_ADDR': '0.0.0.0',
+                'HOST_NAME': 'localhost'
+            }
+        }
+    ]
+};
+EOL
 cd ..
 
 echo "Configuring permissions..."
@@ -604,7 +660,6 @@ rm ./resign.json
 rm ./daccustodian_transfer.json
 rm ./dacauthority_active.json
 rm ./dacauthority_owner.json
-
 
 if [[ ($prompt_for_input == true || "$create_test_custodians" == "") && DACPREFIX != "" ]]; then
   read -p " > ${prompt_color} Would you like to create test custodians, vote them in, and call new period to activate the DAC? (Y/N) ${reset}" create_test_custodians
@@ -714,7 +769,7 @@ if [[ "$create_test_custodians" == "Y" && DACPREFIX != "" ]]; then
   fi
 fi
 
-run_cmd "push action $daccustodian newperiod '{\"message\":\"New Period\"}' -p $custodian5"
+run_cmd "push action $daccustodian newperiod '{\"message\":\"New Period\"}' -p $daccustodian"
 
 echo ""
 echo ""
@@ -765,11 +820,15 @@ if [[ "$response" == "Y" || "$response" == "y" ]]; then
   echo "claim_threshold=\"$claim_threshold\"" >> dac_conf.sh
   echo "claim_approval_threshold_percent=\"$claim_approval_threshold_percent\"" >> dac_conf.sh
   echo "escrow_expiry=\"$escrow_expiry\"" >> dac_conf.sh
-  echo "logo_file_name=\"$logo_file_name\"" >> dac_conf.sh
   echo "create_test_custodians=\"$create_test_custodians\"" >> dac_conf.sh
   echo "CUSTODIAN_PVT=\"$CUSTODIAN_PVT\"" >> dac_conf.sh
   echo "CUSTODIAN_PUB=\"$CUSTODIAN_PUB\"" >> dac_conf.sh
   echo "test_custodian_transfer_amount=\"$test_custodian_transfer_amount\"" >> dac_conf.sh
-  echo "dac_conf.sh saved. Please be careful with this file as it contains your private key."
+  echo "extensions_github=\"$extensions_github\"" >> dac_conf.sh
+  echo "LIB=\"$LIB\"" >> dac_conf.sh
+
+  echo "dac_conf.sh saved. Please be careful with this file as it contains your private key.\n"
+
 fi
 
+echo "\nNow start mongod, run pm2 start in the eosdac-api folder, and then run DEFAULT_NETWORK=jungle quasar dev from the eosdac-client folder.\n"
