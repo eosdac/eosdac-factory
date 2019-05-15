@@ -1,15 +1,3 @@
-[submodule "contracts/daccustodian"]
-	path = contracts/daccustodian
-	url = https://github.com/eosdac/daccustodian.git
-[submodule "contracts/eosdactoken"]
-	path = contracts/eosdactoken
-	url = https://github.com/eosdac/eosdactoken.git
-[submodule "contracts/dacmultisigs"]
-	path = contracts/dacmultisigs
-	url = https://github.com/eosdac/dacmultisigs.git
-[submodule "contracts/dacproposals"]
-	path = contracts/dacproposals
-	url = https://github.com/eosdac/dacproposals.git
 [submodule "eos"]
 	path = eos
 	url = https://github.com/EOS-Mainnet/eos.git
