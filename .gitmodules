@@ -25,3 +25,6 @@
 [submodule "eosio-statereceiver"]
 	path = eosio-statereceiver
 	url = https://github.com/eosdac/eosio-statereceiver.git
+[submodule "eosdac-contracts"]
+	path = eosdac-contracts
+	url = https://github.com/eosdac/eosdac-contracts.git
