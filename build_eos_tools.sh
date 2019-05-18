@@ -13,8 +13,8 @@ fi
 ./eosio_build.sh -s EOS
 cd ../eosio.cdt
 BUILD_VERSION="$(git tag --list | sort | tail -1)"
-echo "Latest version of eosio.cdt is $BUILD_VERSION but we're going to go ahead and use v1.5.0 as 1.6 has some bugs."
-BUILD_VERSION="v1.5.0"
+#echo "Latest version of eosio.cdt is $BUILD_VERSION but we're going to go ahead and use v1.5.0 as 1.6 has some bugs."
+#BUILD_VERSION="v1.5.0"
 echo "Building $BUILD_VERSION..."
 git checkout $BUILD_VERSION
 git submodule update --init --recursive
