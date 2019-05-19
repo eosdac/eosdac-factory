@@ -278,7 +278,7 @@ if [ "$?" != "0" ]; then
 fi
 
 echo "Set token contract on $dactoken ..."
-run_cmd "set contract "$dactoken" "$DACCONTRACTS/eosdactoken/output/jungle/eosdactokens" -p $dactoken"
+run_cmd "set contract "$dactoken" "$DACCONTRACTS/_compiled_contracts/eosdactokens/jungle/eosdactokens" -p $dactoken"
 
 if $prompt_for_input ; then
   if [ "$TOKENSYBMOL" == "" ]; then
@@ -301,15 +301,15 @@ else
 fi
 
 echo "Adjusting compile script for custodian contract..."
-sed_compatible "s/kasdactokens/$dactoken/" "$DACCONTRACTS/daccustodian/output/jungle/compile.sh"
+sed_compatible "s/kasdactokens/$dactoken/" "$DACCONTRACTS/_compiled_contracts/daccustodian/jungle/compile.sh"
 
 echo "Compiling custodian contract..."
 cd $DACCONTRACTS/daccustodian
-./output/jungle/compile.sh
+./compile.sh
 cd ../..
 
 echo "Set custodian contract on $daccustodian ..."
-run_cmd "set contract "$daccustodian" "$DACCONTRACTS/daccustodian/output/jungle/daccustodian" -p $daccustodian"
+run_cmd "set contract "$daccustodian" "$DACCONTRACTS/_compiled_contracts/daccustodian/jungle/daccustodian" -p $daccustodian"
 
 echo "Adjusting compile script for multisig contract..."
 sed_compatible "s/dacauthority/$dacauthority/" "$DACCONTRACTS/dacmultisigs/dacmultisigs.cpp"
@@ -317,22 +317,22 @@ sed_compatible "s/eosio.msig/eosiomsigold/" "$DACCONTRACTS/dacmultisigs/dacmulti
 
 echo "Compiling multisig contract..."
 cd $DACCONTRACTS/dacmultisigs
-./output/jungle/compile.sh
+./compile.sh
 cd ../..
 
 echo "Set multisig contract on $dacmultisigs ..."
-run_cmd "set contract "$dacmultisigs" "$DACCONTRACTS/dacmultisigs/output/jungle/dacmultisigs" -p $dacmultisigs"
+run_cmd "set contract "$dacmultisigs" "$DACCONTRACTS/_compiled_contracts/dacmultisigs/dacmultisigs" -p $dacmultisigs"
 
 echo "Set proposals contract on $dacproposals ..."
-run_cmd "set contract "$dacproposals" "$DACCONTRACTS/dacproposals/output/jungle/dacproposals" -p $dacproposals"
+run_cmd "set contract "$dacproposals" "$DACCONTRACTS/_compiled_contracts/dacproposals/jungle/dacproposals" -p $dacproposals"
 
 
-if $prompt_for_input ; then
-  echo ""
-  echo "============================================================="
-  echo "Time to see some configuration variables for your proposals contract. Just hit enter to go with the defaults"
-  echo "============================================================="
-  echo ""
+#if $prompt_for_input ; then
+#  echo ""
+#  echo "============================================================="
+#  echo "Time to see some configuration variables for your proposals contract. Just hit enter to go with the defaults"
+#  echo "============================================================="
+#  echo ""
 
   # TODO: change this to "escrow_account" instead of service account?
   #echo "What escrow account would you like to use for your DAC proposals system?"
@@ -340,43 +340,50 @@ if $prompt_for_input ; then
   #if [ "$service_account" == "" ]; then
   #  service_account=""
   #fi
-  echo "Number of required votes to participate in voting for a proposal?"
-  read -p " > ${prompt_color} proposal_threshold (3): ${reset}" proposal_threshold
-  if [ "$proposal_threshold" == "" ]; then
-    proposal_threshold="3"
-  fi
-  echo "Required percentage of positive votes to approve a proposal?"
-  read -p " > ${prompt_color} proposal_approval_threshold_percent (50): ${reset}" proposal_approval_threshold_percent
-  if [ "$proposal_approval_threshold_percent" == "" ]; then
-    proposal_approval_threshold_percent="50"
-  fi
-  echo "Number of required votes to participate in voting for completing a proposal?"
-  read -p " > ${prompt_color} claim_threshold (2): ${reset}" claim_threshold
-  if [ "$claim_threshold" == "" ]; then
-    claim_threshold="2"
-  fi
-  echo "Required percentage of positive votes to approve a proposal claim?"
-  read -p " > ${prompt_color} claim_approval_threshold_percent (30): ${reset}" claim_approval_threshold_percent
-  if [ "$claim_approval_threshold_percent" == "" ]; then
-    claim_approval_threshold_percent="30"
-  fi
-  echo "The expiry time set on the created escrow transaction (number of seconds)? This has a default value of 30 days"
-  read -p " > ${prompt_color} escrow_expiry (86400): ${reset}" escrow_expiry
-  if [ "$escrow_expiry" == "" ]; then
-    escrow_expiry="86400"
-  fi
-fi
+#  echo "Number of required votes to participate in voting for a proposal?"
+#  read -p " > ${prompt_color} proposal_threshold (3): ${reset}" proposal_threshold
+#  if [ "$proposal_threshold" == "" ]; then
+#    proposal_threshold="3"
+#  fi
+#  echo "Required percentage of positive votes to approve a proposal?"
+#  read -p " > ${prompt_color} proposal_approval_threshold_percent (50): ${reset}" proposal_approval_threshold_percent
+#  if [ "$proposal_approval_threshold_percent" == "" ]; then
+#    proposal_approval_threshold_percent="50"
+#  fi
+#  echo "Number of required votes to participate in voting for completing a proposal?"
+#  read -p " > ${prompt_color} claim_threshold (2): ${reset}" claim_threshold
+#  if [ "$claim_threshold" == "" ]; then
+#    claim_threshold="2"
+#  fi
+#  echo "Required percentage of positive votes to approve a proposal claim?"
+#  read -p " > ${prompt_color} claim_approval_threshold_percent (30): ${reset}" claim_approval_threshold_percent
+#  if [ "$claim_approval_threshold_percent" == "" ]; then
+#    claim_approval_threshold_percent="30"
+#  fi
+#  echo "The expiry time set on the created escrow transaction (number of seconds)? This has a default value of 30 days"
+#  read -p " > ${prompt_color} escrow_expiry (86400): ${reset}" escrow_expiry
+#  if [ "$escrow_expiry" == "" ]; then
+#    escrow_expiry="86400"
+#  fi
+#  echo "The approval expiry time set on the created escrow transaction (number of seconds)? This has a default value of 30 days"
+#  read -p " > ${prompt_color} approval_expiry (86400): ${reset}" approval_expiry
+#  if [ "$approval_expiry" == "" ]; then
+#    approval_expiry="86400"
+#  fi
+#fi
 
-echo "Setting configuration on $dacproposals"
-echo "{\"new_config\": {\"service_account\": \"\",\"authority_account\": \"$dacauthority\",\"member_terms_account\": \"$dactoken\",\"treasury_account\": \"$dacowner\",\"proposal_threshold\": $proposal_threshold,\"proposal_approval_threshold_percent\": $proposal_approval_threshold_percent,\"claim_threshold\": 5,\"claim_approval_threshold_percent\": $claim_approval_threshold_percent,\"escrow_expiry\": $escrow_expiry}}" > proposal_config.json
-cat proposal_config.json
-config="$(cleos --wallet-url $WALLET_URL -u $API_URL get table $dacproposals $dacproposals configtype | grep rows | awk '{print $2}')"
-if [ "$config" == "[]," ]; then
-  run_cmd "push action $dacproposals updateconfig proposal_config.json -p $dacproposals"
-else
-  run_cmd "push action $dacproposals updateconfig proposal_config.json -p $dacauthority"
-fi
-rm -f proposal_config.json
+# Commenting out for now as this requires dacdirectory integration to function.
+
+#echo "Setting configuration on $dacproposals"
+#echo "{\"new_config\": {\"service_account\": \"\",\"authority_account\": \"$dacauthority\",\"member_terms_account\": \"$dactoken\",\"treasury_account\": \"$dacowner\",\"proposal_threshold\": $proposal_threshold,\"claim_threshold\": 5,\"finalize_threshold\": 4,\"escrow_expiry\": $escrow_expiry, \"approval_expiry\": $approval_expiry}, \"dac_scope\": \"$dacproposals\"}" > proposal_config.json
+#cat proposal_config.json
+#config="$(cleos --wallet-url $WALLET_URL -u $API_URL get table $dacproposals $dacproposals config | grep rows | awk '{print $2}')"
+#if [ "$config" == "[]," ]; then
+#  run_cmd "push action $dacproposals updateconfig proposal_config.json -p $dacproposals"
+#else
+#  run_cmd "push action $dacproposals updateconfig proposal_config.json -p $dacauthority"
+#fi
+#rm -f proposal_config.json
 
 if $prompt_for_input ; then
   read -p " > ${prompt_color} Next you need a constitution. You can fork the github repo at https://github.com/eosdac/constitution to start, but ultimately you'll need to consult your own lawyers to ensure your DAC is set up according to your own legal needs. Once you have a raw markdown file of your constitution available online as a URL, enter that here. If you just want to start with our default, just hit enter to use https://raw.githubusercontent.com/eosdac/constitution/v4/constitution.md${reset}: " CONSTITUTION_URL
@@ -818,11 +825,12 @@ if [[ "$response" == "Y" || "$response" == "y" ]]; then
   echo "auth_threshold_low=\"$auth_threshold_low\"" >> dac_conf.sh
   echo "lockup_release_time_delay=\"$lockup_release_time_delay\"" >> dac_conf.sh
   echo "requested_pay_max=\"$requested_pay_max\"" >> dac_conf.sh
-  echo "proposal_threshold=\"$proposal_threshold\"" >> dac_conf.sh
-  echo "proposal_approval_threshold_percent=\"$proposal_approval_threshold_percent\"" >> dac_conf.sh
-  echo "claim_threshold=\"$claim_threshold\"" >> dac_conf.sh
-  echo "claim_approval_threshold_percent=\"$claim_approval_threshold_percent\"" >> dac_conf.sh
-  echo "escrow_expiry=\"$escrow_expiry\"" >> dac_conf.sh
+#  echo "proposal_threshold=\"$proposal_threshold\"" >> dac_conf.sh
+#  echo "proposal_approval_threshold_percent=\"$proposal_approval_threshold_percent\"" >> dac_conf.sh
+#  echo "claim_threshold=\"$claim_threshold\"" >> dac_conf.sh
+#  echo "claim_approval_threshold_percent=\"$claim_approval_threshold_percent\"" >> dac_conf.sh
+#  echo "escrow_expiry=\"$escrow_expiry\"" >> dac_conf.sh
+#  echo "approval_expiry=\"$approval_expiry\"" >> dac_conf.sh
   echo "create_test_custodians=\"$create_test_custodians\"" >> dac_conf.sh
   echo "CUSTODIAN_PVT=\"$CUSTODIAN_PVT\"" >> dac_conf.sh
   echo "CUSTODIAN_PUB=\"$CUSTODIAN_PUB\"" >> dac_conf.sh
