@@ -100,7 +100,7 @@ if $prompt_for_input ; then
       echo "Private Key: $DAC_PVT"
       read -p " > ${prompt_color} Press any key to clear the screen and continue${reset}" response
       clear
-      echo " > ${prompt_color} Press verify your private key:${reset} "
+      echo " > ${prompt_color} Please verify your private key:${reset} "
       read -s response
       if [[ $response != $DAC_PVT ]]; then
         echo "Private Key does not match!"
@@ -108,7 +108,7 @@ if $prompt_for_input ; then
       fi
       echo "Use the following key to create an account using the Jungle Testnet https://monitor.jungletestnet.io/#home"
       echo "Public Key: $DAC_PUB"
-      read -p " > ${prompt_color} Press verify your public key:${reset} " response
+      read -p " > ${prompt_color} Please verify your public key:${reset} " response
       if [[ $response != $DAC_PUB ]]; then
         echo "Public Key does not match!"
         exit
@@ -459,12 +459,12 @@ if $prompt_for_input ; then
   if [ "$auth_threshold_high" == "" ]; then
     auth_threshold_high="4"
   fi
-  echo "How many custodians are required to approve highest mid actions?"
+  echo "How many custodians are required to approve mid actions?"
   read -p " > ${prompt_color} auth_threshold_mid (3):${reset} " auth_threshold_mid
   if [ "$auth_threshold_mid" == "" ]; then
     auth_threshold_mid="3"
   fi
-  echo "How many custodians are required to approve highest low actions?"
+  echo "How many custodians are required to approve low actions?"
   read -p " > ${prompt_color} auth_threshold_low (2): ${reset}" auth_threshold_low
   if [ "$auth_threshold_low" == "" ]; then
     auth_threshold_low="2"
@@ -691,14 +691,14 @@ if [[ "$create_test_custodians" == "Y" && DACPREFIX != "" ]]; then
       echo "Private Key: $CUSTODIAN_PVT"
       read -p " > ${prompt_color} Press any key to clear the screen and continue${reset}" response
       clear
-      echo " > ${prompt_color} Press verify your private key:${reset} "
+      echo " > ${prompt_color} Please verify your private key:${reset} "
       read -s response
       if [[ $response != $CUSTODIAN_PVT ]]; then
         echo "Private Key does not match!"
         exit
       fi
       echo "Public Key: $CUSTODIAN_PUB"
-      read -p " > ${prompt_color} Press verify your public key:${reset} " response
+      read -p " > ${prompt_color} Please verify your public key:${reset} " response
       if [[ $response != $CUSTODIAN_PUB ]]; then
         echo "Public Key does not match!"
         exit
