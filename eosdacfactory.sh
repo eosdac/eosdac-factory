@@ -502,20 +502,110 @@ fi
 
 echo "Modify DAC client config..."
 
-sed_compatible "s/kasdactokens/$dactoken/" "./src/extensions/statics/config/config.jungle.json"
-sed_compatible "s/KASDAC/$TOKENSYBMOL/" "./src/extensions/statics/config/config.jungle.json"
-sed_compatible "s/1000000000.0000/$DACTOKEN_COUNT_CREATE.0000/" "./src/extensions/statics/config/config.jungle.json"
-sed_compatible "s/dacelections/$daccustodian/" "./src/extensions/statics/config/config.jungle.json"
+cat > ./src/extensions/statics/config/build.config.json <<EOL
+{
+    "host_no_backslash": "http://localhost:8080",
+    "meta_description": "Come to the $dacname Member Client to register and interact with your Decentralized Autonomous Community."
+}
+EOL
+
 # TODO: add bot
-sed_compatible "s/piecesnbitss/piecesnbitss/" "./src/extensions/statics/config/config.jungle.json"
-sed_compatible "s/dacmultisigs/$dacmultisigs/" "./src/extensions/statics/config/config.jungle.json"
-sed_compatible "s/dacproposals/$dacproposals/" "./src/extensions/statics/config/config.jungle.json"
+#sed_compatible "s/piecesnbitss/piecesnbitss/" "./src/extensions/statics/config/config.jungle.json"
 # TODO: add escrow
-sed_compatible "s/eosdacescrow/eosdacescrow/" "./src/extensions/statics/config/config.jungle.json"
-sed_compatible "s/dacauthority/$dacauthority/" "./src/extensions/statics/config/config.jungle.json"
-sed_compatible "s/eosdacdoshhq/$dacowner/" "./src/extensions/statics/config/config.jungle.json"
-sed_compatible "s/http:\/\/ns3119712.ip-51-38-42.eu:3000/http:\/\/localhost:3000/" "./src/extensions/statics/config/config.jungle.json"
-sed_compatible "s/https:\/\/api-jungle.eosdac.io/http:\/\/localhost:8383/" "./src/extensions/statics/config/config.jungle.json"
+#sed_compatible "s/eosdacescrow/eosdacescrow/" "./src/extensions/statics/config/config.jungle.json"
+
+cat > ./src/extensions/statics/config/config.jungle.json <<EOL
+{
+    "dacName": "$DACPREFIX",
+    "dacScope": "$DACPREFIX",
+    "contracts": {
+        "token": {
+            "name": "$dactoken",
+            "symbol": "$TOKENSYBMOL",
+            "totalSupply": $DACTOKEN_COUNT_CREATE.0000,
+            "decimals": 4
+        },
+        "system_token": {
+            "name": "eosio.token",
+            "symbol": "EOS",
+            "decimals": 4
+        },
+        "custodian": {
+            "name": "$daccustodian",
+            "memo": "$daccustodian",
+            "enable_voting" : true
+        },
+        "bot":{
+            "name": "piecesnbitss"
+        },
+        "system_msig": {
+            "name": "eosiomsigold"
+        },
+        "dac_msig": {
+            "name": "$dacmultisigs"
+        },
+        "wpproposal":{
+            "name": "$dacproposals"
+        },
+        "escrow":{
+            "name": "eosdacescrow"
+        }
+    },
+
+    "bpAccount": {
+        "name": "eosdacserval"
+    },
+    "treasuryAccount":{
+        "name": "$dacowner"
+    },
+
+    "authAccount": {
+        "name": "dacfac24auth",
+        "controlling": [
+            {
+                "name":"$dacowner",
+                "linkedAuths": [
+                    {"contract": "eosio.token", "action": "transfer", "permission": "xfer", "label": "Transfer EOS"}
+                ]
+            },
+            {
+                "name":"$daccustodian",
+                "linkedAuths": [
+                    {"contract": "$dactoken", "action": "transfer", "permission": "xfer", "label": "Transfer DACFAC"}
+                ]
+            },
+            {
+                "name":"$dactoken",
+                "linkedAuths": [
+                    {"contract": "$dactoken", "action": "newmemterms", "permission": "active", "label": "Update Constitution"}
+                ]
+            },
+            {
+                "name":"$dacauthority",
+                "linkedAuths":[
+                    {"contract": "$daccustodian", "action": "firecust", "permission": "med", "label": "Fire Custodian"},
+                    {"contract": "$daccustodian", "action": "firecand", "permission": "med", "label": "Fire Candidate"}
+                ]
+            }
+
+        ]
+    },
+
+    "api": {
+        "default_eos_node": "https://jungle2.cryptolions.io:443",
+        "bpnodes": "https://eosdac.io/topnodes.json",
+        "memberclient": "",
+        "memberclient_state_api": "http://localhost:8383/v1/eosdac",
+        "hyperion": "https://jungle.hyperion.eosrio.io/v2/state",
+        "firehose": "ws://jungle.eosdac.io:1337"
+    },
+
+    "external":{
+        "homepage": "https://eosdac.io",
+        "explorer": "https://jungle.bloks.io"
+    }
+}
+EOL
 
 echo "Building dac client with quasar build..."
 quasar build
@@ -529,21 +619,35 @@ cd ..
 echo "Configuring eosdac-api..."
 cd eosdac-api
 npm install
-cp example.config.js jungle.config.js
 
-sed_compatible "s/eosdacdoshhq/$dacowner/" "jungle.config.js"
-sed_compatible "s/kasdactokens/$dactoken/" "jungle.config.js"
-sed_compatible "s/dacauthority/$dacauthority/" "jungle.config.js"
-sed_compatible "s/dacelections/$daccustodian/" "jungle.config.js"
-sed_compatible "s/daccustodian/$daccustodian/" "jungle.config.js"
-sed_compatible "s/dacmultisigs/$dacmultisigs/" "jungle.config.js"
-sed_compatible "s/dacproposals/$dacproposals/" "jungle.config.js"
-sed_compatible "s/'eosdac'/'$DACPREFIX'/" "jungle.config.js"
-sed_compatible "s/eosio.msig/eosiomsigold/" "jungle.config.js"
-# use a blank virtual host for now. Otherwise, we could add $DACPREFIX after localhost\/ if we wanted to support multiple DACS.
-# If we do that, we'll have to login to the RabbitMQ interface to create that virtual host: https://www.tutlane.com/tutorial/rabbitmq/rabbitmq-virtual-hosts
-sed_compatible "s/amqp:\/\/user\:pass@host\/vhost/amqp:\/\/guest\:guest@localhost\//" "jungle.config.js"
-sed_compatible "s/12345/$LIB/" "jungle.config.js"
+
+cat > jungle.config.js <<EOL
+module.exports = {
+    fillClusterSize: 4,
+    clusterSize: 10,
+    mongo: {
+        url: 'mongodb://localhost:27017',
+        dbName: '$DACPREFIX',
+        traceCollection: 'traces',
+        stateCollection: 'states'
+    },
+    amq: {
+        connectionString: 'amqp://guest:guest@localhost/'
+    },
+    eos: {
+        contracts: ['$dactoken', '$daccustodian', '$dacowner', '$dacmultisigs', 'eosiomsigold'],
+        chainId: "e70aaab8997e1dfce58fbfac80cbbb8fecec7b99cf982a9444273cbc64c41473",
+        endpoint: 'http://jungle2.eosdac.io:8882',
+        wsEndpoint: 'ws://jungle2.eosdac.io:8080',
+        authContract: '$dacauthority',
+        msigContract: 'eosiomsigold',
+        custodianContract: '$daccustodian',
+        dacMsigContract: '$dacmultisigs',
+        proposalsContract: '$dacproposals',
+        dacGenesisBlock: $LIB  // the first block that includes any dac contract actions including the initial setcode
+    }
+};
+EOL
 
 cat > ecosystem.config.js <<EOL
 module.exports = {
