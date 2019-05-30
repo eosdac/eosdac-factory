@@ -1,8 +1,8 @@
 # The eosDAC DAC Factory
 
-Eventually we plan to make building your own DAC (Decentralized Autonomous Community) as easy as following some prompts in an easy-to-use interface. Until we get there, we've put together some shell scripts to automate creating your own DAC on the Jungle Testnet. These scripts should get you familiar with the accounts, contracts, permissions, authorizations, APIs, tools, and interfaces that go into a fully working DAC.
+Eventually we plan to make building your own DAC (Decentralized Autonomous Community) as easy as following some prompts in an easy-to-use interface. Until we get there, we've put together some shell scripts to automate creating DACs on the Jungle Testnet for our own testing purposes. Please understand, these scripts are not ready for production use and our systems are changing constantly, including significant contract changes which, in the future, may mean you do not need to deploy your own DAC contracts, but can use ours with your own DAC scope. That said, if you'd like to better understand how things work as they are now, these scripts should get you familiar with the accounts, contracts, permissions, authorizations, APIs, tools, and interfaces that go into a fully working DAC.
 
-Currently, these tools do require technical understanding. If you get stuck, we'll be happy to help in the eosDAC Discord: https://discord.io/eosdac
+Currently, these tools do require technical understanding. If you get stuck, we'll be happy to help in the eosDAC Discord #support channel with in reason: https://discord.io/eosdac The more time we spend in support is less time available for getting our tools production ready.
 
 Requirements include:
 
@@ -54,7 +54,32 @@ This script assumes you want a DAC with 5 custodians (as it currently only creat
 
 Going through the script is a good way to learn about the various configuration files involved and the accounts as well.
 
-As of the time of this writing, the worker proposal system is not complete and is still being developed.
+Here are the main configuration files you should double check:
+
+* eosdac-api/ecosystem.config.js
+
+    The HOST_NAME is set to localhost with this script, but if your eosdac-api will be hosted on a public server, you'll want to replace this with wherever you are hosting your eosdac client. If your API will be on a separate domain, then ensure you have the proper CORS headers set. An example nginx proxy config for the API looks like this, assuming you're running the API on port 8383:
+    ```
+    location ~ ^/v1/eosdac {
+        add_header Access-Control-Origin *;
+        proxy_pass  http://127.0.0.1:8383;
+    }
+    ```
+    If you're running multiple DACs on the same machine, you'll want to give each service a separate name in this file and a separate SERVER_PORT.
+
+* eosdac-api/jungle.config.js
+
+    This file is where you set your MongoDB settings, RabbitMQ settings, and EOS contract information you want to make available to the API. If you're running either of these services somewhere other than localhost, you'll want to adjust this accordingly. Also, if you are using a specific RabbitMQ account login and password or a specified vhost, you'll want to update that here.
+
+* eosdac-client/src/extensions/statics/config/build.config.json
+
+    Here you'll want to modify host_no_backslash and meta_description. Again, if you're serving this somewhere other than localhost, you'll want to make that adjustment here.
+
+* eosdac-client/src/extensions/statics/config/config.jungle.json
+
+    This is where all your accounts are configured for the member client, along with endpoints (such as the eosdac-api url configured with memberclient_state_api) the client needs.
+
+As of this writing, the worker proposal system is not complete and is still being developed.
 
 Good luck and please feel free to ask us questions. If you do end up creating a real DAC on Mainnet along with your own community token, please consider reserving some of those tokens for an airdrop on the active, voting members of the eosDAC community as a contribution for the value this open source software has brought to you. Please do contact us and let us know you've created a DAC using this software.
 
