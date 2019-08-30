@@ -15,7 +15,7 @@ create_act() {
   creator="$1"
   act="$2"
   key="$3"
-  eval "cleos --wallet-url $WALLET_URL -u $API_URL system newaccount --stake-cpu \"5.0000 EOS\" --stake-net \"1.0000 EOS\" --transfer --buy-ram-kbytes 1025 $creator $act $key"
+  eval "cleos --wallet-url $WALLET_URL -u $API_URL system newaccount --stake-cpu \"5.0000 EOS\" --stake-net \"1.0000 EOS\" --transfer --buy-ram-kbytes 2048 $creator $act $key"
 }
 
 sed_compatible() {
